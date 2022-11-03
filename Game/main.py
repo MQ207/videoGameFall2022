@@ -5,7 +5,6 @@
 
 # import libraries and modules
 # from platform import platform
-from time import sleep
 import pygame as pg
 from pygame.sprite import Sprite
 import random
@@ -13,6 +12,8 @@ from random import randint
 from settings import *
 
 vec = pg.math.Vector2
+shootClock = 0
+canShot = True
 
 # Function that draws text (Don't know to much about it since it was a copy and paste inclass)
 def draw_text(text, size, color, x, y):
@@ -150,14 +151,14 @@ class Bullet(Sprite):
         # Finds the closest mob and based off which one it is it will find the slope then shoots at it
         mobClosest = min(mobDistance)
         if mobClosest == mobDistance[0]:
-            self.vel.x = (bulletXY[0]/10) * -10
-            self.vel.y = (bulletXY[1]/10) * -10
+            self.vel.x = (bulletXY[0]/10) * -5
+            self.vel.y = (bulletXY[1]/10) * -5
         elif mobClosest == mobDistance[1]:
-            self.vel.x = (bulletXY[2]/10) * -10
-            self.vel.y = (bulletXY[3]/10) * -10
+            self.vel.x = (bulletXY[2]/10) * -5
+            self.vel.y = (bulletXY[3]/10) * -5
         elif mobClosest == mobDistance[2]:
-            self.vel.x = (bulletXY[4]/10) * -10
-            self.vel.y = (bulletXY[5]/10) * -10
+            self.vel.x = (bulletXY[4]/10) * -5
+            self.vel.y = (bulletXY[5]/10) * -5
         else:
             self.vel.x = 10
 
@@ -288,6 +289,13 @@ while running:
             if event.key == pg.K_SPACE:
                 player.jump()
 
+    if canShot == False:
+        shootClock += 1
+        print(shootClock)
+        if shootClock == 10:
+            canShot = True
+            shootClock = 0
+
             # When C is pressed then spawn a bullet and add it to the bullet sprite groups
             # if event.key == pg.K_c:
             #     def throwBullet():
@@ -300,9 +308,6 @@ while running:
             #     if canShot == True:
             #         throwBullet()
             #         canShot = False
-
-
-
     
     ############ Update ##############
     # update all sprites
