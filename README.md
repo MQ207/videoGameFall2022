@@ -34,7 +34,7 @@ MQHP000@gmail.com
 
 ## License
 
-This project is licensed under the  License
+This project is licensed under the MIT License
 
 ## Acknowledgments
 
