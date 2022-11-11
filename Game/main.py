@@ -152,23 +152,23 @@ class Bullet(Sprite):
             mobX = abs(playerX - (mob.rect.center[0]))
             mobY = abs(playerY - (mob.rect.center[1]))
             bulletXY.append(playerX - (mob.rect.center[0]))
-            bulletXY.append(playerY - (mob.rect.center[1]))
+            bulletXY.append(playerY - (mob.rect.center[1]) - 10)
             mob = mobY + mobX
             mobDistance.append(mob)
 
         # Finds the closest mob and based off which one it is it will find the slope then shoots at it
         mobClosest = min(mobDistance)
         if mobClosest == mobDistance[0]:
-            self.vel.x = (bulletXY[0]/10) * -10
-            self.vel.y = (bulletXY[1]/10) * -10
+            self.vel.x = (bulletXY[0]) * -.05
+            self.vel.y = (bulletXY[1]) * -.05
         elif mobClosest == mobDistance[1]:
-            self.vel.x = (bulletXY[2]/10) * -10
-            self.vel.y = (bulletXY[3]/10) * -10
+            self.vel.x = (bulletXY[2]) * -.05
+            self.vel.y = (bulletXY[3]) * -.05
         elif mobClosest == mobDistance[2]:
-            self.vel.x = (bulletXY[4]/10) * -10
-            self.vel.y = (bulletXY[5]/10) * -10
+            self.vel.x = (bulletXY[4]) * -.05
+            self.vel.y = (bulletXY[5]) * -.05
         else:
-            self.vel.x = 10
+            self.kill()
 
 
 
@@ -237,10 +237,6 @@ while running:
     if hits:
         player.pos.y = hits[0].rect.top
         player.vel.y = 0
-    #     player.vel.x = 0
-    #     PLAYER_GRAV = 0
-    # else:
-    #     PLAYER_GRAV = 0.8
     
     # if player hits a mob then get one point and deletes the mob but im prolly gonna change it to deal damage
     for i in range(len(m)):
@@ -248,16 +244,9 @@ while running:
         if mobhits:
             m.remove(mobhits[0])
             HEALTH -= 1
-            SCORE -= 1
             fakeSCORE += 1
-    
-    # for i in range(len(m)):
-    #     mobmob = pg.sprite.spritecollide(m[i], mobs, False)
-    #     if mobmob:
-    #         if FRAME % 15 == 0:
-    #             m[i].vel.x = randint(-10, 10)
-    #         if FRAME % 30 == 0:
-    #             m[i].vel.y = randint(-10, -5)
+            if SCORE != 0:
+                SCORE -= 1
 
     # For all bullets in the list, check to see if it has hit a mob and if so then add to the score and delete the mob
     for i in range(len(allBull)):
@@ -278,6 +267,7 @@ while running:
             allBull.remove(bullethitWall[0])    
             all_bullets.remove(bullethitWall[0])
 
+
     for i in range(len(allBull)):
         if allBull[0].pos[0] < 0:
             allBull.remove(allBull[0])
@@ -287,7 +277,6 @@ while running:
             allBull.remove(allBull[0])
         elif allBull[0].pos[1] > HEIGHT:
             allBull.remove(allBull[0])
-        print(all_bullets,allBull)
 
     if player.pos.x < 0:
         player.pos.x = WIDTH
@@ -308,6 +297,17 @@ while running:
             all_sprites.add(newMob)
             mobs.add(newMob)
             m.append(newMob)
+            
+    if canShot == False:
+        shootClock += 1
+    if shootClock == 1:
+        canShot = True
+        shootClock = 0
+
+    print(allBull, all_bullets)
+
+    if HEALTH == 0:
+        player.kill()
 
     # checks if the window is open or close and stops the thing if closed
     for event in pg.event.get():
@@ -321,30 +321,9 @@ while running:
             if event.key == pg.K_SPACE:
                 player.jump()
 
-    if canShot == False:
-        shootClock += 1
-        if shootClock == 5:
-            canShot = True
-            shootClock = 0
-
-            # When C is pressed then spawn a bullet and add it to the bullet sprite groups
-            # if event.key == pg.K_c:
-            #     def throwBullet():
-            #         bullet = Bullet(20, 20, RED)
-            #         all_sprites.add(bullet)
-            #         all_bullets.add(bullet)
-            #         allBull.append(bullet)
-            #         bullet.fly()
-
-            #     if canShot == True:
-            #         throwBullet()
-            #         canShot = False
-    
-    ############ Update ##############
     # update all sprites
     all_sprites.update()
 
-    ############ Draw ################
     # draw the background screen
     screen.fill(BLACK)
         # draw all sprites
