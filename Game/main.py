@@ -3,6 +3,27 @@
 # min() https://www.geeksforgeeks.org/python-program-to-find-smallest-number-in-a-list/
 # abs() https://www.toppr.com/guides/python-guide/questions/change-positive-negative-python/
 
+'''
+future plans:
+Power-up class
+Mob moving randomly and shooting randomly
+Spirites
+Levels
+Different types of mobs
+ - Moves towards and pathes towards the player
+ - Shooter Imma shoot u
+
+Rlly far future plans:
+Different guns
+animations
+Menu: pause and start
+Level selector
+Particals
+NPC's and money
+Move outside the window so like more space
+In-game transactions
+'''
+
 # import libraries and modules
 # from platform import platform
 import pygame as pg
@@ -51,12 +72,12 @@ class Player(Sprite):
             self.acc.x = 5
         if keys[pg.K_c]:
             def throwBullet():
-                    bullet = Bullet(20, 20, RED, "player")
-                    all_sprites.add(bullet)
-                    all_bullets.add(bullet)
-                    allBull.append(bullet)
-                    bullet.fly()
-                
+                bullet = Bullet(20, 20, RED, "player")
+                all_sprites.add(bullet)
+                all_bullets.add(bullet)
+                allBull.append(bullet)
+                bullet.fly()
+            
             if canShot == True:
                 throwBullet()
                 canShot = False
@@ -88,25 +109,29 @@ class Platform(Sprite):
 
 # Mob class that have xy cords, size, and color
 class Mob(Sprite):
-    def __init__(self, x, y, w, h, color, birth):
+    def __init__(self, x, y, w, h, color, move):
         Sprite.__init__(self)
         self.image = pg.Surface((w, h))
         self.color = color
+        self.move = move
         self.image.fill(color)
         self.rect = self.image.get_rect()
         self.pos = x, y
         self.vel = vec(0,0)
         self.acc = vec(0,0)
-        self.birth = birth
-        print(birth)
     
-    def shot():
-        for i in range(len(m)):
-            bullet = Bullet(20, 20, RED, "mob")
-            all_sprites.add(bullet)
-            all_bullets.add(bullet)
-            allBull.append(bullet)
-            bullet.fly()
+    def shot(self):
+        if self.move == False:
+            for i in range(len(m)):
+                bullet = Bullet(20, 20, RED, "mob")
+                all_sprites.add(bullet)
+                all_bullets.add(bullet)
+                allBull.append(bullet)
+                bullet.fly()
+
+    def mover(self):
+        self.vel.x = (player.rect.center[0] - 10) / 100
+        self.vel.y = (player.rect.center[1] - 10) / 100
 
 # Like the player, mob also has a update method so the gravity can be a thing
     def update(self):
@@ -115,9 +140,8 @@ class Mob(Sprite):
         self.vel += self.acc
         self.pos += self.vel + 0.5 * self.acc
         self.rect.midbottom = self.pos
-    
-    def move(self):
-        FRAME
+        if self.move == True:
+            self.mover()
 
 # Bullet calls that has the same property as everything else
 class Bullet(Sprite):
@@ -158,7 +182,6 @@ class Bullet(Sprite):
 
         # For all bullets in the list, check to see if it has hit a mob and if so then add to the score and delete the mob
         if self.who == "player":
-            # for o in range(len(allBull)):
             bullethitsmob = pg.sprite.spritecollide(self, mobs, True)
             if bullethitsmob:
                 m.remove(bullethitsmob[0])
@@ -245,9 +268,9 @@ player0 = pg.sprite.Group()
 player = Player()
 plat = Platform(0, HEIGHT - 125, WIDTH, 60)
 plat2 = Platform(280, (HEIGHT / 2) + 180, 200, 35)
-m1 = Mob(randint(0,WIDTH), randint(100,HEIGHT - 100), 40, 40, (colorbyte(),colorbyte(),colorbyte()), FRAME)
-m2 = Mob(randint(0,WIDTH), randint(100,HEIGHT - 100), 40, 40, (colorbyte(),colorbyte(),colorbyte()), FRAME)
-m3 = Mob(randint(0,WIDTH), randint(100,HEIGHT - 100), 40, 40, (colorbyte(),colorbyte(),colorbyte()), FRAME)
+m1 = Mob(randint(0,WIDTH), randint(100,HEIGHT - 100), 40, 40, (colorbyte(),colorbyte(),colorbyte()), True)
+m2 = Mob(randint(0,WIDTH), randint(100,HEIGHT - 100), 40, 40, (colorbyte(),colorbyte(),colorbyte()), False)
+m3 = Mob(randint(0,WIDTH), randint(100,HEIGHT - 100), 40, 40, (colorbyte(),colorbyte(),colorbyte()), True)
 
 
 # Adds all bullets put in the allBulls list into sprite groups
@@ -283,7 +306,7 @@ while running:
 
     # For every mob in mob list, check if they collide with a platform and if teleport to the top and set y velocity to 0
     for i in range(len(m)):
-        hits = pg.sprite.spritecollide(m[i], all_plats, False)
+        hits = pg.sprite.spritecollide(player, mobs, True)
         if hits:
             m[i].pos.y = hits[0].rect.top
             m[i].vel.y = 0
@@ -315,7 +338,6 @@ while running:
         if bullethitWall:
             allBull.remove(bullethitWall[0])    
             all_bullets.remove(bullethitWall[0])
-            # print(allBull)
 
     for i in range(len(allBull)):
         if allBull[0].pos[0] <= 0:
@@ -337,14 +359,31 @@ while running:
             m[i].pos[0] = WIDTH
         elif m[i].pos[0] > WIDTH:
             m[i].pos[0] = 0
-            
+
+    if len(m) > 0:
+        if mobskip == True:
+            mobskip = False
+            mobframe = FRAME
+        if mobskip == False:
+            if FRAME - mobframe == 50:
+                mobskip = True
+                Mob.shot()
+
     if canShot == False:
         shootClock += 1
     if shootClock == 10:
         canShot = True
         shootClock = 0
-    if shootClock == 5:
-        Mob.shot()
+
+    if SCORE >= 10 and fakeSCORE == 3:
+        if allplats[1] == plat2:
+            allplats.pop(1)
+            plat2.kill()
+            plat3 = Platform(560, (HEIGHT / 2) + 180, 200, 35)
+            all_sprites.add(plat3)
+            all_plats.add(plat3)
+            allplats.append(plat3)
+            fakeSCORE = fakeSCORE + 2
     
     if SCORE <= 10:
         # If the fake score equals to 3 then reset it and add 3 new mobs
@@ -356,11 +395,15 @@ while running:
                 if FRAME - frame == 30:
                     fakeSCORE = 0
                     skip = True
-                    for i in range(3):
-                        newMob = Mob(randint(0,WIDTH), randint(100, HEIGHT - 100), 40, 40, (colorbyte(),colorbyte(),colorbyte()), FRAME)
+                    for i in range(2):
+                        newMob = Mob(randint(0,WIDTH), randint(100, HEIGHT - 100), 40, 40, (colorbyte(),colorbyte(),colorbyte()), True)
                         all_sprites.add(newMob)
                         mobs.add(newMob)
                         m.append(newMob)
+                    newMob = Mob(randint(0,WIDTH), randint(100, HEIGHT - 100), 40, 40, (colorbyte(),colorbyte(),colorbyte()), False)
+                    all_sprites.add(newMob)
+                    mobs.add(newMob)
+                    m.append(newMob)
 
     if SCORE <= 20 and SCORE >= 10:
         if fakeSCORE >= 5:
@@ -371,22 +414,15 @@ while running:
                 if FRAME - frame == 30:
                     fakeSCORE = 0
                     skip = True
-                    for i in range(5):
-                        newMob = Mob(randint(0,WIDTH), randint(100, HEIGHT - 100), 40, 40, (colorbyte(),colorbyte(),colorbyte()), FRAME)
+                    for i in range(4):
+                        newMob = Mob(randint(0,WIDTH), randint(100, HEIGHT - 100), 40, 40, (colorbyte(),colorbyte(),colorbyte()), True)
                         all_sprites.add(newMob)
                         mobs.add(newMob)
                         m.append(newMob)
-
-    if SCORE == 10:
-        if allplats[1] == plat2:
-            allplats.pop(1)
-            plat2.kill()
-            plat3 = Platform(560, (HEIGHT / 2) + 180, 200, 35)
-            all_sprites.add(plat3)
-            all_plats.add(plat3)
-            allplats.append(plat3)
-            fakeSCORE = fakeSCORE + 2
-            print(fakeSCORE)
+                    newMob = Mob(randint(0,WIDTH), randint(100, HEIGHT - 100), 40, 40, (colorbyte(),colorbyte(),colorbyte()), False)
+                    all_sprites.add(newMob)
+                    mobs.add(newMob)
+                    m.append(newMob)
 
     # checks if the window is open or close and stops the thing if closed
     for event in pg.event.get():
