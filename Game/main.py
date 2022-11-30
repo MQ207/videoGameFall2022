@@ -51,7 +51,7 @@ class Player(Sprite):
             self.acc.x = 5
         if keys[pg.K_c]:
             def throwBullet():
-                    bullet = Bullet(20, 20, RED)
+                    bullet = Bullet(20, 20, RED, "player")
                     all_sprites.add(bullet)
                     all_bullets.add(bullet)
                     allBull.append(bullet)
@@ -99,6 +99,14 @@ class Mob(Sprite):
         self.pos = x, y
         self.vel = vec(0,0)
         self.acc = vec(0,0)
+    
+    def shot():
+        for i in range(len(m)):
+            bullet = Bullet(20, 20, RED, "mob")
+            all_sprites.add(bullet)
+            all_bullets.add(bullet)
+            allBull.append(bullet)
+            bullet.fly()
 
 # Like the player, mob also has a update method so the gravity can be a thing
     def update(self):
@@ -108,22 +116,33 @@ class Mob(Sprite):
         self.pos += self.vel + 0.5 * self.acc
         self.rect.midbottom = self.pos
 
+    # def move(self):
+
 # Bullet calls that has the same property as everything else
 class Bullet(Sprite):
-    def __init__(self, w, h, color):
+    def __init__(self, w, h, color, who):
         Sprite.__init__(self)
         self.image = pg.Surface((w, h))
         self.color = color
         self.image.fill(color)
+        self.who = who
         self.rect = self.image.get_rect()
-        self.pos = (player.rect.center[0], player.rect.center[1])
-        self.rect.x = player.rect.center[0] - 10
-        self.rect.y = player.rect.center[1] - 10
+        if who == "player":
+            self.pos = (player.rect.center[0], player.rect.center[1])
+            self.rect.x = player.rect.center[0] - 10
+            self.rect.y = player.rect.center[1] - 10
+        if who == "mob":
+            for i in range(len(m)):
+                self.pos = (m[i].rect.center[0], m[i].rect.center[1])
+                self.rect.x = m[i].rect.center[0] - 10
+                self.rect.y = m[i].rect.center[1] - 10
         self.vel = vec(0,0)
         self.acc = vec(0,0)
+
     
     # Also has a update but without gravity
     def update(self):
+        global HEALTH, SCORE, fakeSCORE
         self.vel += self.acc
         self.pos += self.vel + 0.5 * self.acc
         self.rect.midbottom = self.pos
@@ -136,6 +155,25 @@ class Bullet(Sprite):
         elif self.pos[1] > HEIGHT:
             self.kill()
 
+        # For all bullets in the list, check to see if it has hit a mob and if so then add to the score and delete the mob
+        if self.who == "player":
+            # for o in range(len(allBull)):
+            bullethitsmob = pg.sprite.spritecollide(self, mobs, True)
+            if bullethitsmob:
+                m.remove(bullethitsmob[0])
+                SCORE += 1
+                fakeSCORE += 1
+
+        # for i in range(len(m)):
+        if self.who == "mob":
+            # for o in range(len(allBull)):
+            bullethitsplayer = pg.sprite.spritecollide(self, player0, False)
+            if bullethitsplayer:
+                HEALTH -= 1
+                if SCORE != 0:
+                    SCORE -= 1
+                self.kill()
+
     # Fly really just gets the cords of all mobs on screen then compares to know which to shoot at
     def fly(self):
         # Gets the players cords
@@ -146,30 +184,39 @@ class Bullet(Sprite):
         mobDistance = []
         bulletXY = []
 
-        # For each mob in the mob list, find the distance from the player then put it in the list from earlier
-        for i in range(len(m)):
-            mob = m[i]
-            mobX = abs(playerX - (mob.rect.center[0]))
-            mobY = abs(playerY - (mob.rect.center[1]))
-            bulletXY.append(playerX - (mob.rect.center[0]))
-            bulletXY.append(playerY - (mob.rect.center[1]) - 10)
-            mob = mobY + mobX
-            mobDistance.append(mob)
+        for mob in m:
+            if self.who == "mob":
+                self.vel.x = (playerX - (mob.rect.center[0]))/10
+                self.vel.y = (playerY - (mob.rect.center[1]))/10
 
-        # Finds the closest mob and based off which one it is it will find the slope then shoots at it
-        mobClosest = min(mobDistance)
-        if mobClosest == mobDistance[0]:
-            self.vel.x = (bulletXY[0]) * -.05
-            self.vel.y = (bulletXY[1]) * -.05
-        elif mobClosest == mobDistance[1]:
-            self.vel.x = (bulletXY[2]) * -.05
-            self.vel.y = (bulletXY[3]) * -.05
-        elif mobClosest == mobDistance[2]:
-            self.vel.x = (bulletXY[4]) * -.05
-            self.vel.y = (bulletXY[5]) * -.05
-        else:
-            self.kill()
+            # For each mob in the mob list, find the distance from the player then put it in the list from earlier
+            if self.who == "player":   
+                mobX = abs(playerX - (mob.rect.center[0]))
+                mobY = abs(playerY - (mob.rect.center[1]))
+                bulletXY.append(playerX - (mob.rect.center[0]))
+                bulletXY.append(playerY - (mob.rect.center[1]) - 10)
+                mob = mobY + mobX
+                mobDistance.append(mob)
 
+                # Finds the closest mob and based off which one it is it will find the slope then shoots at it
+                mobClosest = min(mobDistance)
+                if mobClosest == mobDistance[0]:
+                    self.vel.x = (bulletXY[0]) * -.05
+                    self.vel.y = (bulletXY[1]) * -.05
+                elif mobClosest == mobDistance[1]:
+                    self.vel.x = (bulletXY[2]) * -.05
+                    self.vel.y = (bulletXY[3]) * -.05
+                elif mobClosest == mobDistance[2]:
+                    self.vel.x = (bulletXY[4]) * -.05
+                    self.vel.y = (bulletXY[5]) * -.05
+                elif mobClosest == mobDistance[3]:
+                    self.vel.x = (bulletXY[6]) * -.05
+                    self.vel.y = (bulletXY[7]) * -.05
+                elif mobClosest == mobDistance[4]:
+                    self.vel.x = (bulletXY[8]) * -.05
+                    self.vel.y = (bulletXY[9]) * -.05
+                else:
+                    self.kill()
 
 
 
@@ -248,13 +295,6 @@ while running:
             if SCORE != 0:
                 SCORE -= 1
 
-    # For all bullets in the list, check to see if it has hit a mob and if so then add to the score and delete the mob
-    for i in range(len(allBull)):
-        bullethits = pg.sprite.spritecollide(allBull[i], mobs, True)
-        if bullethits:
-            m.remove(bullethits[0])
-            SCORE += 1
-            fakeSCORE += 1
 
     if len(mobs) != len(m):
         fakeSCORE += 1
@@ -266,16 +306,16 @@ while running:
         if bullethitWall:
             allBull.remove(bullethitWall[0])    
             all_bullets.remove(bullethitWall[0])
-
+            # print(allBull)
 
     for i in range(len(allBull)):
-        if allBull[0].pos[0] < 0:
+        if allBull[0].pos[0] <= 0:
+            allBull.remove(allBull[0])       
+        elif allBull[0].pos[0] >= WIDTH:
             allBull.remove(allBull[0])
-        elif allBull[0].pos[0] > WIDTH:
+        elif allBull[0].pos[1] <= 0:
             allBull.remove(allBull[0])
-        elif allBull[0].pos[1] < 0:
-            allBull.remove(allBull[0])
-        elif allBull[0].pos[1] > HEIGHT:
+        elif allBull[0].pos[1] >= HEIGHT:
             allBull.remove(allBull[0])
 
     if player.pos.x < 0:
@@ -288,25 +328,41 @@ while running:
             m[i].pos[0] = WIDTH
         elif m[i].pos[0] > WIDTH:
             m[i].pos[0] = 0
-
-    # If the fake score equals to 3 then reset it and add 3 new mobs
-    if fakeSCORE >= 3:
-        fakeSCORE = 0
-        for i in range(3):
-            newMob = Mob(randint(0,WIDTH), randint(100, HEIGHT - 100), 40, 40, (colorbyte(),colorbyte(),colorbyte()))
-            all_sprites.add(newMob)
-            mobs.add(newMob)
-            m.append(newMob)
             
     if canShot == False:
         shootClock += 1
-    if shootClock == 1:
+    if shootClock == 10:
         canShot = True
         shootClock = 0
+    if shootClock == 5:
+        Mob.shot()
+    
+    if SCORE <= 10:
+        # If the fake score equals to 3 then reset it and add 3 new mobs
+        if fakeSCORE >= 3:
+            fakeSCORE = 0
+            for i in range(3):
+                newMob = Mob(randint(0,WIDTH), randint(100, HEIGHT - 100), 40, 40, (colorbyte(),colorbyte(),colorbyte()))
+                all_sprites.add(newMob)
+                mobs.add(newMob)
+                m.append(newMob)
 
-    print(allBull, all_bullets)
+    if SCORE <= 20 and SCORE >= 10:
+        if fakeSCORE >= 5:
+            fakeSCORE = 0
+            for i in range(5):
+                newMob = Mob(randint(0,WIDTH), randint(100, HEIGHT - 100), 40, 40, (colorbyte(),colorbyte(),colorbyte()))
+                all_sprites.add(newMob)
+                mobs.add(newMob)
+                m.append(newMob)
 
-    if HEALTH == 0:
+    if SCORE == 10:
+        if len(allplats) > 1:
+            allplats.pop(1)
+            plat2.kill()
+            fakeSCORE = fakeSCORE + 2
+
+    if HEALTH <= 0:
         player.kill()
 
     # checks if the window is open or close and stops the thing if closed
