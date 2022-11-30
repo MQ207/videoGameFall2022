@@ -88,17 +88,17 @@ class Platform(Sprite):
 
 # Mob class that have xy cords, size, and color
 class Mob(Sprite):
-    def __init__(self, x, y, w, h, color):
+    def __init__(self, x, y, w, h, color, birth):
         Sprite.__init__(self)
         self.image = pg.Surface((w, h))
         self.color = color
         self.image.fill(color)
         self.rect = self.image.get_rect()
-        # self.rect.x = x
-        # self.rect.y = y
         self.pos = x, y
         self.vel = vec(0,0)
         self.acc = vec(0,0)
+        self.birth = birth
+        print(birth)
     
     def shot():
         for i in range(len(m)):
@@ -115,8 +115,9 @@ class Mob(Sprite):
         self.vel += self.acc
         self.pos += self.vel + 0.5 * self.acc
         self.rect.midbottom = self.pos
-
-    # def move(self):
+    
+    def move(self):
+        FRAME
 
 # Bullet calls that has the same property as everything else
 class Bullet(Sprite):
@@ -218,7 +219,13 @@ class Bullet(Sprite):
                 else:
                     self.kill()
 
-
+class PowerUp(Sprite):
+    def __init__(self, color):
+        Sprite.__init__(self)
+        self.color = color
+        self.image.fill(color)
+        self.image = pg.Surface((20, 20))
+        self.rect = self.image.get_rect()
 
 # init pygame and create a window
 pg.init()
@@ -230,7 +237,6 @@ clock = pg.time.Clock()
 # create sprite groups so we can check for collisions and draw it in
 all_sprites = pg.sprite.Group()
 all_plats = pg.sprite.Group()
-all_other_plats = pg.sprite.Group()
 mobs = pg.sprite.Group()
 all_bullets = pg.sprite.Group()
 player0 = pg.sprite.Group()
@@ -239,9 +245,9 @@ player0 = pg.sprite.Group()
 player = Player()
 plat = Platform(0, HEIGHT - 125, WIDTH, 60)
 plat2 = Platform(280, (HEIGHT / 2) + 180, 200, 35)
-m1 = Mob(randint(0,WIDTH), randint(100,HEIGHT - 100), 40, 40, (colorbyte(),colorbyte(),colorbyte()))
-m2 = Mob(randint(0,WIDTH), randint(100,HEIGHT - 100), 40, 40, (colorbyte(),colorbyte(),colorbyte()))
-m3 = Mob(randint(0,WIDTH), randint(100,HEIGHT - 100), 40, 40, (colorbyte(),colorbyte(),colorbyte()))
+m1 = Mob(randint(0,WIDTH), randint(100,HEIGHT - 100), 40, 40, (colorbyte(),colorbyte(),colorbyte()), FRAME)
+m2 = Mob(randint(0,WIDTH), randint(100,HEIGHT - 100), 40, 40, (colorbyte(),colorbyte(),colorbyte()), FRAME)
+m3 = Mob(randint(0,WIDTH), randint(100,HEIGHT - 100), 40, 40, (colorbyte(),colorbyte(),colorbyte()), FRAME)
 
 
 # Adds all bullets put in the allBulls list into sprite groups
@@ -251,6 +257,7 @@ all_bullets.add(allBull)
 
 # add mobs in sprite group
 m = [m1, m2, m3]
+# List of mobs but the form of the names of the mobs can't be changed so it can not be used to identify certain mobs
 all_sprites.add(m)
 mobs.add(m)
 
@@ -271,6 +278,8 @@ while running:
 
     # keeps the loop running using clock
     clock.tick(FPS)
+
+    FRAME += 1
 
     # For every mob in mob list, check if they collide with a platform and if teleport to the top and set y velocity to 0
     for i in range(len(m)):
@@ -339,31 +348,45 @@ while running:
     
     if SCORE <= 10:
         # If the fake score equals to 3 then reset it and add 3 new mobs
-        if fakeSCORE >= 3:
-            fakeSCORE = 0
-            for i in range(3):
-                newMob = Mob(randint(0,WIDTH), randint(100, HEIGHT - 100), 40, 40, (colorbyte(),colorbyte(),colorbyte()))
-                all_sprites.add(newMob)
-                mobs.add(newMob)
-                m.append(newMob)
+        if fakeSCORE >= 3: 
+            if skip == True:
+                skip = False
+                frame = FRAME
+            if skip == False:
+                if FRAME - frame == 30:
+                    fakeSCORE = 0
+                    skip = True
+                    for i in range(3):
+                        newMob = Mob(randint(0,WIDTH), randint(100, HEIGHT - 100), 40, 40, (colorbyte(),colorbyte(),colorbyte()), FRAME)
+                        all_sprites.add(newMob)
+                        mobs.add(newMob)
+                        m.append(newMob)
 
     if SCORE <= 20 and SCORE >= 10:
         if fakeSCORE >= 5:
-            fakeSCORE = 0
-            for i in range(5):
-                newMob = Mob(randint(0,WIDTH), randint(100, HEIGHT - 100), 40, 40, (colorbyte(),colorbyte(),colorbyte()))
-                all_sprites.add(newMob)
-                mobs.add(newMob)
-                m.append(newMob)
+            if skip == True:
+                skip = False
+                frame = FRAME
+            if skip == False:
+                if FRAME - frame == 30:
+                    fakeSCORE = 0
+                    skip = True
+                    for i in range(5):
+                        newMob = Mob(randint(0,WIDTH), randint(100, HEIGHT - 100), 40, 40, (colorbyte(),colorbyte(),colorbyte()), FRAME)
+                        all_sprites.add(newMob)
+                        mobs.add(newMob)
+                        m.append(newMob)
 
     if SCORE == 10:
-        if len(allplats) > 1:
+        if allplats[1] == plat2:
             allplats.pop(1)
             plat2.kill()
+            plat3 = Platform(560, (HEIGHT / 2) + 180, 200, 35)
+            all_sprites.add(plat3)
+            all_plats.add(plat3)
+            allplats.append(plat3)
             fakeSCORE = fakeSCORE + 2
-
-    if HEALTH <= 0:
-        player.kill()
+            print(fakeSCORE)
 
     # checks if the window is open or close and stops the thing if closed
     for event in pg.event.get():
@@ -377,23 +400,28 @@ while running:
             if event.key == pg.K_SPACE:
                 player.jump()
 
-    # update all sprites
-    all_sprites.update()
+    if HEALTH <= 0:
+        player.kill()
+        screen.fill(BLACK)
+        draw_text("U suck lol", 300, WHITE, WIDTH / 2, HEIGHT / 3)
+    else:
+        # update all sprites
+        all_sprites.update()
 
-    # draw the background screen
-    screen.fill(BLACK)
-        # draw all sprites
-    all_sprites.draw(screen)
-    # draw text
-    draw_text("Get to 30 points to win!", 20, BLACK, WIDTH / 2, HEIGHT - 110)
-    draw_text("POINTS: " + str(SCORE), 22, WHITE, WIDTH / 2, HEIGHT / 24)
-    draw_text("HEALTH: " + str(HEALTH), 22, WHITE, WIDTH / 2, HEIGHT / 10)
-                # If score equals 30 then end game
-    if SCORE >= 30:
-        draw_text("U WIN", 100, WHITE, WIDTH / 2, HEIGHT - 400)
+        # draw the background screen
+        screen.fill(BLACK)
+            # draw all sprites
+        all_sprites.draw(screen)
+        # draw text
+        draw_text("Get to 30 points to win!", 20, BLACK, WIDTH / 2, HEIGHT - 110)
+        draw_text("POINTS: " + str(SCORE), 22, WHITE, WIDTH / 2, HEIGHT / 24)
+        draw_text("HEALTH: " + str(HEALTH), 22, WHITE, WIDTH - (WIDTH / 3), HEIGHT / 24)
+        draw_text("FRAME: " + str(FRAME), 22, WHITE, WIDTH / 3, HEIGHT / 24)
+                    # If score equals 30 then end game
+        if SCORE >= 30:
+            draw_text("U WIN", 100, WHITE, WIDTH / 2, HEIGHT - 400)
 
     # buffer - after drawing everything, flip display
     pg.display.flip()
-    FRAME += 1
 
 pg.quit()

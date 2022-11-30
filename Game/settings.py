@@ -20,3 +20,4 @@ BLUE = (0, 0, 255)
 
 # random Vars
 fakeSCORE = 0
+skip = True
