@@ -9,7 +9,7 @@ PLAYER_GRAV = 0.8
 PLAYER_FRIC = 0.1
 GRAVITY = 0.8
 SCORE = 0
-HEALTH = 10
+HEALTH = 1000
 
 # define colors
 WHITE = (255, 255, 255)

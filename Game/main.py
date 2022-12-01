@@ -119,19 +119,20 @@ class Mob(Sprite):
         self.pos = x, y
         self.vel = vec(0,0)
         self.acc = vec(0,0)
+        self.mobframe = 0
+        self.mobskip = True
     
     def shot(self):
         if self.move == False:
-            for i in range(len(m)):
-                bullet = Bullet(20, 20, RED, "mob")
-                all_sprites.add(bullet)
-                all_bullets.add(bullet)
-                allBull.append(bullet)
-                bullet.fly()
+            bullet = Bullet(20, 20, RED, "mob")
+            all_sprites.add(bullet)
+            all_bullets.add(bullet)
+            allBull.append(bullet)
+            bullet.fly()
 
     def mover(self):
-        self.vel.x = (player.rect.center[0] - 10) / 100
-        self.vel.y = (player.rect.center[1] - 10) / 100
+            self.vel.x = (player.rect.center[0] - (self.rect.center[0]))/20
+            self.vel.y = (player.rect.center[1] - (self.rect.center[1]))/20
 
 # Like the player, mob also has a update method so the gravity can be a thing
     def update(self):
@@ -140,8 +141,23 @@ class Mob(Sprite):
         self.vel += self.acc
         self.pos += self.vel + 0.5 * self.acc
         self.rect.midbottom = self.pos
-        if self.move == True:
-            self.mover()
+        if len(m) > 0:
+            if self.move == True:
+                if self.mobskip == True:
+                    self.mobskip = False
+                    self.mobframe = FRAME
+                if self.mobskip == False:
+                    if FRAME - self.mobframe >= 5:
+                        self.mobskip = True
+                        self.mover()
+            if self.move == False:
+                if self.mobskip == True:
+                    self.mobskip = False
+                    self.mobframe = FRAME
+                if self.mobskip == False:
+                    if FRAME - self.mobframe >= 15:
+                        self.mobskip = True
+                        self.shot()
 
 # Bullet calls that has the same property as everything else
 class Bullet(Sprite):
@@ -163,6 +179,8 @@ class Bullet(Sprite):
                 self.rect.y = m[i].rect.center[1] - 10
         self.vel = vec(0,0)
         self.acc = vec(0,0)
+        self.frame = 0
+        self.skip = True
 
     
     # Also has a update but without gravity
@@ -184,7 +202,8 @@ class Bullet(Sprite):
         if self.who == "player":
             bullethitsmob = pg.sprite.spritecollide(self, mobs, True)
             if bullethitsmob:
-                m.remove(bullethitsmob[0])
+                if len(m) > 0:
+                    m.remove(bullethitsmob[0])
                 SCORE += 1
                 fakeSCORE += 1
 
@@ -196,6 +215,14 @@ class Bullet(Sprite):
                 HEALTH -= 1
                 if SCORE != 0:
                     SCORE -= 1
+                self.kill()
+
+        if self.skip == True:
+            self.skip = False
+            self.frame = FRAME
+        if self.skip == False:
+            if FRAME - self.frame >= 50:
+                self.skip = True
                 self.kill()
 
     # Fly really just gets the cords of all mobs on screen then compares to know which to shoot at
@@ -225,22 +252,20 @@ class Bullet(Sprite):
                 # Finds the closest mob and based off which one it is it will find the slope then shoots at it
                 mobClosest = min(mobDistance)
                 if mobClosest == mobDistance[0]:
-                    self.vel.x = (bulletXY[0]) * -.05
-                    self.vel.y = (bulletXY[1]) * -.05
+                    self.vel.x = (bulletXY[0]) * -.1
+                    self.vel.y = (bulletXY[1]) * -.1
                 elif mobClosest == mobDistance[1]:
-                    self.vel.x = (bulletXY[2]) * -.05
-                    self.vel.y = (bulletXY[3]) * -.05
+                    self.vel.x = (bulletXY[2]) * -.1
+                    self.vel.y = (bulletXY[3]) * -.1
                 elif mobClosest == mobDistance[2]:
-                    self.vel.x = (bulletXY[4]) * -.05
-                    self.vel.y = (bulletXY[5]) * -.05
+                    self.vel.x = (bulletXY[4]) * -.1
+                    self.vel.y = (bulletXY[5]) * -.1
                 elif mobClosest == mobDistance[3]:
-                    self.vel.x = (bulletXY[6]) * -.05
-                    self.vel.y = (bulletXY[7]) * -.05
+                    self.vel.x = (bulletXY[6]) * -.1
+                    self.vel.y = (bulletXY[7]) * -.1
                 elif mobClosest == mobDistance[4]:
-                    self.vel.x = (bulletXY[8]) * -.05
-                    self.vel.y = (bulletXY[9]) * -.05
-                else:
-                    self.kill()
+                    self.vel.x = (bulletXY[8]) * -.1
+                    self.vel.y = (bulletXY[9]) * -.1
 
 class PowerUp(Sprite):
     def __init__(self, color):
@@ -280,6 +305,7 @@ all_bullets.add(allBull)
 
 # add mobs in sprite group
 m = [m1, m2, m3]
+mobshooters = []
 # List of mobs but the form of the names of the mobs can't be changed so it can not be used to identify certain mobs
 all_sprites.add(m)
 mobs.add(m)
@@ -306,9 +332,9 @@ while running:
 
     # For every mob in mob list, check if they collide with a platform and if teleport to the top and set y velocity to 0
     for i in range(len(m)):
-        hits = pg.sprite.spritecollide(player, mobs, True)
+        hits = pg.sprite.spritecollide(m[i], all_plats, False)
         if hits:
-            m[i].pos.y = hits[0].rect.top
+            m[i].pos.y =  hits[0].rect.top
             m[i].vel.y = 0
     
     # check if player collide with a platform and if teleport to the top and set y velocity to 0
@@ -326,7 +352,6 @@ while running:
             fakeSCORE += 1
             if SCORE != 0:
                 SCORE -= 1
-
 
     if len(mobs) != len(m):
         fakeSCORE += 1
@@ -360,18 +385,9 @@ while running:
         elif m[i].pos[0] > WIDTH:
             m[i].pos[0] = 0
 
-    if len(m) > 0:
-        if mobskip == True:
-            mobskip = False
-            mobframe = FRAME
-        if mobskip == False:
-            if FRAME - mobframe == 50:
-                mobskip = True
-                Mob.shot()
-
     if canShot == False:
         shootClock += 1
-    if shootClock == 10:
+    if shootClock == 5:
         canShot = True
         shootClock = 0
 
@@ -385,44 +401,53 @@ while running:
             allplats.append(plat3)
             fakeSCORE = fakeSCORE + 2
     
-    if SCORE <= 10:
-        # If the fake score equals to 3 then reset it and add 3 new mobs
+    if SCORE <= 9:
+        mobmove = True
         if fakeSCORE >= 3: 
             if skip == True:
                 skip = False
                 frame = FRAME
             if skip == False:
-                if FRAME - frame == 30:
+                if FRAME - frame == 15:
                     fakeSCORE = 0
                     skip = True
-                    for i in range(2):
-                        newMob = Mob(randint(0,WIDTH), randint(100, HEIGHT - 100), 40, 40, (colorbyte(),colorbyte(),colorbyte()), True)
-                        all_sprites.add(newMob)
-                        mobs.add(newMob)
-                        m.append(newMob)
-                    newMob = Mob(randint(0,WIDTH), randint(100, HEIGHT - 100), 40, 40, (colorbyte(),colorbyte(),colorbyte()), False)
-                    all_sprites.add(newMob)
-                    mobs.add(newMob)
-                    m.append(newMob)
+                    for i in range(3):
+                        if mobmove == True:
+                            newMob = Mob(randint(0,WIDTH), randint(100, HEIGHT - 100), 40, 40, (colorbyte(),colorbyte(),colorbyte()), True)
+                            all_sprites.add(newMob)
+                            mobs.add(newMob)
+                            m.append(newMob)
+                            mobmove = False
+                        else:
+                            newMob = Mob(randint(0,WIDTH), randint(100, HEIGHT - 100), 40, 40, (colorbyte(),colorbyte(),colorbyte()), False)
+                            all_sprites.add(newMob)
+                            mobs.add(newMob)
+                            m.insert(0, newMob)
+                            mobmove = True
 
     if SCORE <= 20 and SCORE >= 10:
+        mobmove = True
         if fakeSCORE >= 5:
             if skip == True:
                 skip = False
                 frame = FRAME
             if skip == False:
-                if FRAME - frame == 30:
+                if FRAME - frame == 15:
                     fakeSCORE = 0
                     skip = True
-                    for i in range(4):
-                        newMob = Mob(randint(0,WIDTH), randint(100, HEIGHT - 100), 40, 40, (colorbyte(),colorbyte(),colorbyte()), True)
-                        all_sprites.add(newMob)
-                        mobs.add(newMob)
-                        m.append(newMob)
-                    newMob = Mob(randint(0,WIDTH), randint(100, HEIGHT - 100), 40, 40, (colorbyte(),colorbyte(),colorbyte()), False)
-                    all_sprites.add(newMob)
-                    mobs.add(newMob)
-                    m.append(newMob)
+                    for i in range(5):
+                        if mobmove == True:
+                            newMob = Mob(randint(0,WIDTH), randint(100, HEIGHT - 100), 40, 40, (colorbyte(),colorbyte(),colorbyte()), True)
+                            all_sprites.add(newMob)
+                            mobs.add(newMob)
+                            m.append(newMob)
+                            mobmove = False
+                        else:
+                            newMob = Mob(randint(0,WIDTH), randint(100, HEIGHT - 100), 40, 40, (colorbyte(),colorbyte(),colorbyte()), False)
+                            all_sprites.add(newMob)
+                            mobs.add(newMob)
+                            m.insert(0, newMob)
+                            mobmove = True
 
     # checks if the window is open or close and stops the thing if closed
     for event in pg.event.get():
