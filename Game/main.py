@@ -2,6 +2,7 @@
 # append into list https://www.digitalocean.com/community/tutorials/python-add-to-list
 # min() https://www.geeksforgeeks.org/python-program-to-find-smallest-number-in-a-list/
 # abs() https://www.toppr.com/guides/python-guide/questions/change-positive-negative-python/
+# Thank you to Tyson for being a stress ball
 
 '''
 future plans:
@@ -35,6 +36,7 @@ from settings import *
 vec = pg.math.Vector2
 shootClock = 0
 canShot = True
+shootermobs = []
 
 # Function that draws text (Don't know to much about it since it was a copy and paste inclass)
 def draw_text(text, size, color, x, y):
@@ -72,7 +74,7 @@ class Player(Sprite):
             self.acc.x = 5
         if keys[pg.K_c]:
             def throwBullet():
-                bullet = Bullet(20, 20, RED, "player")
+                bullet = Bullet(20, 20, RED, "player", self)
                 all_sprites.add(bullet)
                 all_bullets.add(bullet)
                 allBull.append(bullet)
@@ -121,10 +123,12 @@ class Mob(Sprite):
         self.acc = vec(0,0)
         self.mobframe = 0
         self.mobskip = True
+        if move == False:
+            shootermobs.append(self)
     
     def shot(self):
         if self.move == False:
-            bullet = Bullet(20, 20, RED, "mob")
+            bullet = Bullet(20, 20, RED, "mob", self)
             all_sprites.add(bullet)
             all_bullets.add(bullet)
             allBull.append(bullet)
@@ -155,16 +159,29 @@ class Mob(Sprite):
                     self.mobskip = False
                     self.mobframe = FRAME
                 if self.mobskip == False:
-                    if FRAME - self.mobframe >= 10:
+                    if FRAME - self.mobframe >= 20:
                         self.mobskip = True
                         self.shot()
+        
+        mobhits = pg.sprite.spritecollide(self, player0, False)
+        global HEALTH, SCORE, fakeSCORE
+        if mobhits:
+            self.kill()
+            m.remove(self)
+            if self.move == False:
+                shootermobs.remove(self)
+            HEALTH -= 1
+            fakeSCORE += 1
+            if SCORE != 0:
+                SCORE -= 1
 
 # Bullet calls that has the same property as everything else
 class Bullet(Sprite):
-    def __init__(self, w, h, color, who):
+    def __init__(self, w, h, color, who, whatmob):
         Sprite.__init__(self)
         self.image = pg.Surface((w, h))
         self.color = color
+        self.whatmob = whatmob
         self.image.fill(color)
         self.who = who
         self.rect = self.image.get_rect()
@@ -173,10 +190,13 @@ class Bullet(Sprite):
             self.rect.x = player.rect.center[0] - 10
             self.rect.y = player.rect.center[1] - 10
         if who == "mob":
-            for i in range(len(m)):
-                self.pos = (m[i].rect.center[0], m[i].rect.center[1])
-                self.rect.x = m[i].rect.center[0] - 10
-                self.rect.y = m[i].rect.center[1] - 10
+            # for i in range(len(shootermobs)):
+            #     self.pos = (shootermobs[i].rect.center[0], shootermobs[i].rect.center[1])
+            #     self.rect.x = shootermobs[i].rect.center[0] - 10
+            #     self.rect.y = shootermobs[i].rect.center[1] - 10
+            self.pos = (whatmob.rect.center[0], whatmob.rect.center[1])
+            self.rect.x = whatmob.rect.center[0] - 10
+            self.rect.y = whatmob.rect.center[1] - 10
         self.vel = vec(0,0)
         self.acc = vec(0,0)
         self.frame = 0
@@ -204,6 +224,8 @@ class Bullet(Sprite):
             if bullethitsmob:
                 if len(m) > 0:
                     m.remove(bullethitsmob[0])
+                if len(mobshooters) > 0:
+                    shootermobs.remove(bullethitsmob[0])
                 SCORE += 5
                 fakeSCORE += 1
 
@@ -235,12 +257,13 @@ class Bullet(Sprite):
         mobDistance = []
         bulletXY = []
 
-        for mob in m:
-            if self.who == "mob":
-                self.vel.x = (playerX - (mob.rect.center[0]))/10
-                self.vel.y = (playerY - (mob.rect.center[1]))/10
+        if self.who == "mob":
+            # for i in range(len(shootermobs)):
+            self.vel.x = (playerX - (self.whatmob.rect.center[0]))/10
+            self.vel.y = (playerY - (self.whatmob.rect.center[1]))/10
 
             # For each mob in the mob list, find the distance from the player then put it in the list from earlier
+        for mob in m:
             if self.who == "player":   
                 mobX = abs(playerX - (mob.rect.center[0]))
                 mobY = abs(playerY - (mob.rect.center[1]))
@@ -344,14 +367,15 @@ while running:
         player.vel.y = 0
     
     # if player hits a mob then get one point and deletes the mob but im prolly gonna change it to deal damage
-    for i in range(len(m)):
-        mobhits = pg.sprite.spritecollide(player, mobs, True)
-        if mobhits:
-            m.remove(mobhits[0])
-            HEALTH -= 1
-            fakeSCORE += 1
-            if SCORE != 0:
-                SCORE -= 1
+    # for i in range(len(m)):
+    #     mobhits = pg.sprite.spritecollide(player, mobs, True)
+    #     if mobhits:
+    #         m.remove(mobhits[0])
+    #         shootermobs.remove(mobhits[0])
+    #         HEALTH -= 1
+    #         fakeSCORE += 1
+    #         if SCORE != 0:
+    #             SCORE -= 1
 
     if len(mobs) != len(m):
         fakeSCORE += 1
