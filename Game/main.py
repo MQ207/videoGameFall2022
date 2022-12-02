@@ -155,7 +155,7 @@ class Mob(Sprite):
                     self.mobskip = False
                     self.mobframe = FRAME
                 if self.mobskip == False:
-                    if FRAME - self.mobframe >= 15:
+                    if FRAME - self.mobframe >= 10:
                         self.mobskip = True
                         self.shot()
 
@@ -204,7 +204,7 @@ class Bullet(Sprite):
             if bullethitsmob:
                 if len(m) > 0:
                     m.remove(bullethitsmob[0])
-                SCORE += 1
+                SCORE += 5
                 fakeSCORE += 1
 
         # for i in range(len(m)):
@@ -480,7 +480,9 @@ while running:
         draw_text("FRAME: " + str(FRAME), 22, WHITE, WIDTH / 3, HEIGHT / 24)
                     # If score equals 30 then end game
         if SCORE >= 30:
-            draw_text("U WIN", 100, WHITE, WIDTH / 2, HEIGHT - 400)
+            player.kill()
+            screen.fill(BLACK)
+            draw_text("U WIN", 100, WHITE, WIDTH / 2, HEIGHT / 3)
 
     # buffer - after drawing everything, flip display
     pg.display.flip()
