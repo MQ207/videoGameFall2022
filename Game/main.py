@@ -10,6 +10,9 @@ Power-up class
 Mob moving randomly and shooting randomly
 Spirites
 Levels
+Bombs
+Soul Knight?
+Mini Map?
 Different types of mobs
  - Moves towards and pathes towards the player
  - Shooter Imma shoot u
@@ -32,11 +35,14 @@ from pygame.sprite import Sprite
 import random
 from random import randint
 from settings import *
+from levels import *
 
 vec = pg.math.Vector2
 shootClock = 0
 canShot = True
 shootermobs = []
+
+image = pg.image.load(r'c:/github/IntroToProgramming/videoGameFall2022/Game/images/StarterScreen.jpg')
 
 # Function that draws text (Don't know to much about it since it was a copy and paste inclass)
 def draw_text(text, size, color, x, y):
@@ -69,9 +75,13 @@ class Player(Sprite):
         global canShot
         keys = pg.key.get_pressed()
         if keys[pg.K_a]:
-            self.acc.x = -5
+            self.acc.x = -10
         if keys[pg.K_d]:
-            self.acc.x = 5
+            self.acc.x = 10
+        if keys[pg.K_s]:
+            self.acc.y = 10
+        if keys[pg.K_w]:
+            self.acc.y = -10
         if keys[pg.K_c]:
             def throwBullet():
                 bullet = Bullet(20, 20, RED, "player", self)
@@ -80,7 +90,7 @@ class Player(Sprite):
                 allBull.append(bullet)
                 bullet.fly()
             
-            if canShot == True:
+            if canShot == True and levelcounter > 0:
                 throwBullet()
                 canShot = False
 
@@ -92,9 +102,10 @@ class Player(Sprite):
             
     # Update so whenever a frame is going on this runs and constantly updates the class so things like gravity can exist
     def update(self):
-        self.acc = vec(0,PLAYER_GRAV)
+        self.acc = vec(0,GRAVITY)
         self.controls()
-        self.acc.x += self.vel.x * -0.1
+        self.acc.x += self.vel.x * -0.5
+        self.acc.y += self.vel.y * -0.5
         self.vel += self.acc
         self.pos += self.vel + 0.5 * self.acc
         self.rect.midbottom = self.pos
@@ -142,6 +153,7 @@ class Mob(Sprite):
     def update(self):
         self.acc = vec(0,GRAVITY)
         self.acc.x += self.vel.x * -0.1
+        self.acc.y += self.vel.y * -0.1
         self.vel += self.acc
         self.pos += self.vel + 0.5 * self.acc
         self.rect.midbottom = self.pos
@@ -312,37 +324,56 @@ mobs = pg.sprite.Group()
 all_bullets = pg.sprite.Group()
 player0 = pg.sprite.Group()
 
+allplats = []
+mobshooters = []
+allBull = []
+m = []
+
 # instantiate classes
 player = Player()
 plat = Platform(0, HEIGHT - 125, WIDTH, 60)
-plat2 = Platform(280, (HEIGHT / 2) + 180, 200, 35)
-m1 = Mob(randint(0,WIDTH), randint(100,HEIGHT - 100), 40, 40, (colorbyte(),colorbyte(),colorbyte()), True)
-m2 = Mob(randint(0,WIDTH), randint(100,HEIGHT - 100), 40, 40, (colorbyte(),colorbyte(),colorbyte()), False)
-m3 = Mob(randint(0,WIDTH), randint(100,HEIGHT - 100), 40, 40, (colorbyte(),colorbyte(),colorbyte()), True)
+
+def firstlevel():
+    global plat2
+    plat2 = Platform(280, (HEIGHT / 2) + 180, 200, 35)
+    m1 = Mob(randint(WIDTH/2,WIDTH - 50), randint(100,HEIGHT - 100), 40, 40, (colorbyte(),colorbyte(),colorbyte()), True)
+    m2 = Mob(randint(WIDTH/2,WIDTH - 50), randint(100,HEIGHT - 100), 40, 40, (colorbyte(),colorbyte(),colorbyte()), False)
+    m3 = Mob(randint(WIDTH/2,WIDTH - 50), randint(100,HEIGHT - 100), 40, 40, (colorbyte(),colorbyte(),colorbyte()), True)
+    # List of mobs but the form of the names of the mobs can't be changed so it can not be used to identify certain mobs
+    all_sprites.add(m)
+    mobs.add(m)
+    m.append(m1)
+    m.append(m2)
+    m.append(m3)
+
+    all_sprites.add(plat2)
+    all_plats.add(plat2)
+    allplats.append(plat2)
+
+def secondlevel():
+    global fakeSCORE
+    allplats.pop(1)
+    plat2.kill()
+    plat3 = Platform(560, (HEIGHT / 2) + 180, 200, 35)
+    all_sprites.add(plat3)
+    all_plats.add(plat3)
+    allplats.append(plat3)
+    fakeSCORE = fakeSCORE + 2
 
 
 # Adds all bullets put in the allBulls list into sprite groups
-allBull = []
 all_sprites.add(allBull)
 all_bullets.add(allBull)
 
-# add mobs in sprite group
-m = [m1, m2, m3]
-mobshooters = []
-# List of mobs but the form of the names of the mobs can't be changed so it can not be used to identify certain mobs
-all_sprites.add(m)
-mobs.add(m)
 
 # add player to all sprites groupad
 all_sprites.add(player)
 player0.add(player)
 
 # add platform to all sprites group and all platforms groups
-all_sprites.add(plat, plat2)
-all_plats.add(plat, plat2)
-allplats = []
+all_sprites.add(plat)
+all_plats.add(plat)
 allplats.append(plat)
-allplats.append(plat2)
 
 # Game loop
 running = True
@@ -352,6 +383,14 @@ while running:
     clock.tick(FPS)
 
     FRAME += 1
+
+    if levelcounter == 1 and level1 == False:
+        firstlevel()
+        level1 = True
+    
+    if SCORE >= 10 and fakeSCORE == 3 and allplats[1] == plat2 and levelcounter == 2 and level2 == False:
+        level2 = True
+        secondlevel()
 
     # For every mob in mob list, check if they collide with a platform and if teleport to the top and set y velocity to 0
     for i in range(len(m)):
@@ -400,8 +439,11 @@ while running:
 
     if player.pos.x < 0:
         player.pos.x = WIDTH
+        levelcounter -= 1
     elif player.pos.x > WIDTH:
         player.pos.x = 0
+        levelcounter += 1
+        print(levelcounter)
     
     for i in range(len(m)):
         if m[i].pos[0] < 0:
@@ -415,15 +457,15 @@ while running:
         canShot = True
         shootClock = 0
 
-    if SCORE >= 10 and fakeSCORE == 3:
-        if allplats[1] == plat2:
-            allplats.pop(1)
-            plat2.kill()
-            plat3 = Platform(560, (HEIGHT / 2) + 180, 200, 35)
-            all_sprites.add(plat3)
-            all_plats.add(plat3)
-            allplats.append(plat3)
-            fakeSCORE = fakeSCORE + 2
+    # if SCORE >= 10 and fakeSCORE == 3:
+    #     if allplats[1] == plat2:
+    #         allplats.pop(1)
+    #         plat2.kill()
+    #         plat3 = Platform(560, (HEIGHT / 2) + 180, 200, 35)
+    #         all_sprites.add(plat3)
+    #         all_plats.add(plat3)
+    #         allplats.append(plat3)
+    #         fakeSCORE = fakeSCORE + 2
     
     if SCORE <= 9:
         mobmove = True
@@ -437,19 +479,19 @@ while running:
                     skip = True
                     for i in range(3):
                         if mobmove == True:
-                            newMob = Mob(randint(0,WIDTH), randint(100, HEIGHT - 100), 40, 40, (colorbyte(),colorbyte(),colorbyte()), True)
+                            newMob = Mob(randint(WIDTH / 2, WIDTH - 50), randint(100, HEIGHT - 100), 40, 40, (colorbyte(),colorbyte(),colorbyte()), True)
                             all_sprites.add(newMob)
                             mobs.add(newMob)
                             m.append(newMob)
                             mobmove = False
                         else:
-                            newMob = Mob(randint(0,WIDTH), randint(100, HEIGHT - 100), 40, 40, (colorbyte(),colorbyte(),colorbyte()), False)
+                            newMob = Mob(randint(WIDTH / 2, WIDTH - 50), randint(100, HEIGHT - 100), 40, 40, (colorbyte(),colorbyte(),colorbyte()), False)
                             all_sprites.add(newMob)
                             mobs.add(newMob)
                             m.insert(0, newMob)
                             mobmove = True
 
-    if SCORE <= 20 and SCORE >= 10:
+    if SCORE <= 30 and SCORE >= 10:
         mobmove = True
         if fakeSCORE >= 5:
             if skip == True:
@@ -494,14 +536,18 @@ while running:
         all_sprites.update()
 
         # draw the background screen
-        screen.fill(BLACK)
-            # draw all sprites
+        screen.fill((0,0,0))
+        # If levelcounter == 0
+        screen.blit(image, (0, 0))
+        
+        # draw all sprites
         all_sprites.draw(screen)
+
         # draw text
         draw_text("Get to 30 points to win!", 20, BLACK, WIDTH / 2, HEIGHT - 110)
-        draw_text("POINTS: " + str(SCORE), 22, WHITE, WIDTH / 2, HEIGHT / 24)
-        draw_text("HEALTH: " + str(HEALTH), 22, WHITE, WIDTH - (WIDTH / 3), HEIGHT / 24)
-        draw_text("FRAME: " + str(FRAME), 22, WHITE, WIDTH / 3, HEIGHT / 24)
+        draw_text("POINTS: " + str(SCORE), 22, WHITE, WIDTH / 2, HEIGHT / 75)
+        draw_text("HEALTH: " + str(HEALTH), 22, WHITE, WIDTH - (WIDTH / 3), HEIGHT / 75)
+        draw_text("FRAME: " + str(FRAME), 22, WHITE, WIDTH / 3, HEIGHT / 75)
                     # If score equals 30 then end game
         if SCORE >= 30:
             player.kill()

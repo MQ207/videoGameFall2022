@@ -5,9 +5,7 @@ FRAME = 1
 CLOCK = 30
 
 # player settings
-PLAYER_GRAV = 0.8
-PLAYER_FRIC = 0.1
-GRAVITY = 0.8
+GRAVITY = 0
 SCORE = 0
 HEALTH = 100
 
