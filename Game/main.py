@@ -248,7 +248,7 @@ class Bullet(Sprite):
             # for o in range(len(allBull)):
             bullethitsplayer = pg.sprite.spritecollide(self, player0, False)
             if bullethitsplayer:
-                HEALTH -= 1
+                HEALTH -= 5
                 if SCORE != 0:
                     SCORE -= 1
                 self.kill()
