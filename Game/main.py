@@ -5,6 +5,8 @@
 # Thank you to Tyson for being a stress ball
 
 '''
+Things to Fix:
+- Boundries
 future plans:
 Power-up class
 Mob moving randomly and shooting randomly
@@ -238,7 +240,7 @@ class Bullet(Sprite):
                     m.remove(bullethitsmob[0])
                 if len(mobshooters) > 0:
                     shootermobs.remove(bullethitsmob[0])
-                SCORE += 5
+                SCORE += 3
                 fakeSCORE += 1
 
         # for i in range(len(m)):
@@ -274,34 +276,25 @@ class Bullet(Sprite):
             self.vel.x = (playerX - (self.whatmob.rect.center[0]))/10
             self.vel.y = (playerY - (self.whatmob.rect.center[1]))/10
 
-            # For each mob in the mob list, find the distance from the player then put it in the list from earlier
-        for mob in m:
-            if self.who == "player":   
+    
+            # If the bullet came from a player
+        if self.who == "player":  
+            for mob in m: 
+            # Grabs the xy distance from the player to the mob then adds them so see what mob is closest
+                global mobClosest
                 mobX = abs(playerX - (mob.rect.center[0]))
                 mobY = abs(playerY - (mob.rect.center[1]))
                 bulletXY.append(playerX - (mob.rect.center[0]))
                 bulletXY.append(playerY - (mob.rect.center[1]) - 10)
                 mob = mobY + mobX
                 mobDistance.append(mob)
-
-                # Finds the closest mob and based off which one it is it will find the slope then shoots at it
                 mobClosest = min(mobDistance)
-                if mobClosest == mobDistance[0]:
-                    self.vel.x = (bulletXY[0]) * -.1
-                    self.vel.y = (bulletXY[1]) * -.1
-                elif mobClosest == mobDistance[1]:
-                    self.vel.x = (bulletXY[2]) * -.1
-                    self.vel.y = (bulletXY[3]) * -.1
-                elif mobClosest == mobDistance[2]:
-                    self.vel.x = (bulletXY[4]) * -.1
-                    self.vel.y = (bulletXY[5]) * -.1
-                elif mobClosest == mobDistance[3]:
-                    self.vel.x = (bulletXY[6]) * -.1
-                    self.vel.y = (bulletXY[7]) * -.1
-                elif mobClosest == mobDistance[4]:
-                    self.vel.x = (bulletXY[8]) * -.1
-                    self.vel.y = (bulletXY[9]) * -.1
-
+            
+            for i in range(len(m)):
+                if mobClosest == mobDistance[i]:
+                    self.vel.x = (bulletXY[(2 * i)]) * -.1
+                    self.vel.y = (bulletXY[((2 * i) + 1)]) * -.1
+                
 class PowerUp(Sprite):
     def __init__(self, color):
         Sprite.__init__(self)
@@ -331,14 +324,17 @@ m = []
 
 # instantiate classes
 player = Player()
-plat = Platform(0, HEIGHT - 125, WIDTH, 60)
+plat = Platform(WIDTH, HEIGHT, 0, 0)
+all_plats.add(plat)
+allplats.append(plat)
+# plat = Platform(0, HEIGHT - 125, WIDTH, 60)
 
 def firstlevel():
     global plat2
-    plat2 = Platform(280, (HEIGHT / 2) + 180, 200, 35)
-    m1 = Mob(randint(WIDTH/2,WIDTH - 50), randint(100,HEIGHT - 100), 40, 40, (colorbyte(),colorbyte(),colorbyte()), True)
-    m2 = Mob(randint(WIDTH/2,WIDTH - 50), randint(100,HEIGHT - 100), 40, 40, (colorbyte(),colorbyte(),colorbyte()), False)
-    m3 = Mob(randint(WIDTH/2,WIDTH - 50), randint(100,HEIGHT - 100), 40, 40, (colorbyte(),colorbyte(),colorbyte()), True)
+    plat2 = Platform(WIDTH * 0.8, 0, 1, HEIGHT)
+    m1 = Mob(randint(WIDTH/2,WIDTH - 300), randint(100,HEIGHT - 100), 40, 40, (colorbyte(),colorbyte(),colorbyte()), True)
+    m2 = Mob(randint(WIDTH/2,WIDTH - 300), randint(100,HEIGHT - 100), 40, 40, (colorbyte(),colorbyte(),colorbyte()), False)
+    m3 = Mob(randint(WIDTH/2,WIDTH - 300), randint(100,HEIGHT - 100), 40, 40, (colorbyte(),colorbyte(),colorbyte()), True)
     # List of mobs but the form of the names of the mobs can't be changed so it can not be used to identify certain mobs
     all_sprites.add(m)
     mobs.add(m)
@@ -346,7 +342,6 @@ def firstlevel():
     m.append(m2)
     m.append(m3)
 
-    all_sprites.add(plat2)
     all_plats.add(plat2)
     allplats.append(plat2)
 
@@ -354,10 +349,6 @@ def secondlevel():
     global fakeSCORE
     allplats.pop(1)
     plat2.kill()
-    plat3 = Platform(560, (HEIGHT / 2) + 180, 200, 35)
-    all_sprites.add(plat3)
-    all_plats.add(plat3)
-    allplats.append(plat3)
     fakeSCORE = fakeSCORE + 2
 
 
@@ -371,9 +362,9 @@ all_sprites.add(player)
 player0.add(player)
 
 # add platform to all sprites group and all platforms groups
-all_sprites.add(plat)
-all_plats.add(plat)
-allplats.append(plat)
+# all_sprites.add(plat)
+# all_plats.add(plat)
+# allplats.append(plat)
 
 # Game loop
 running = True
@@ -387,35 +378,33 @@ while running:
     if levelcounter == 1 and level1 == False:
         firstlevel()
         level1 = True
+        
     
-    if SCORE >= 10 and fakeSCORE == 3 and allplats[1] == plat2 and levelcounter == 2 and level2 == False:
+    if SCORE >= 10 and fakeSCORE == 3 and levelcounter == 2 and level2 == False:
         level2 = True
+        level1 = False
         secondlevel()
 
     # For every mob in mob list, check if they collide with a platform and if teleport to the top and set y velocity to 0
-    for i in range(len(m)):
-        hits = pg.sprite.spritecollide(m[i], all_plats, False)
-        if hits:
-            m[i].pos.y =  hits[0].rect.top
-            m[i].vel.y = 0
+    # for i in range(len(m)):
+    #     hits = pg.sprite.spritecollide(m[i], all_plats, False)
+    #     if hits:
+    #         m[i].pos.y =  hits[0].rect.top
+    #         m[i].vel.y = 0
     
     # check if player collide with a platform and if teleport to the top and set y velocity to 0
-    hits = pg.sprite.spritecollide(player, all_plats, False)
-    if hits:
-        player.pos.y = hits[0].rect.top
-        player.vel.y = 0
-    
-    # if player hits a mob then get one point and deletes the mob but im prolly gonna change it to deal damage
-    # for i in range(len(m)):
-    #     mobhits = pg.sprite.spritecollide(player, mobs, True)
-    #     if mobhits:
-    #         m.remove(mobhits[0])
-    #         shootermobs.remove(mobhits[0])
-    #         HEALTH -= 1
-    #         fakeSCORE += 1
-    #         if SCORE != 0:
-    #             SCORE -= 1
+    hits = pg.sprite.spritecollide(plat, player0, False)
+    if not hits:
+        if player.pos.y <= 60:
+            player.pos.y = 50
+        if player.pos.y >= HEIGHT :
+            player.pos.y = HEIGHT - 10
 
+    if level1 == True:
+        hits = pg.sprite.spritecollide(plat2, player0, False)
+        if hits:
+            player.pos.x = hits[0].rect.right
+    
     if len(mobs) != len(m):
         fakeSCORE += 1
         SCORE += 1
@@ -439,11 +428,12 @@ while running:
 
     if player.pos.x < 0:
         player.pos.x = WIDTH
-        levelcounter -= 1
+        if len(m) == 0:
+            levelcounter -= 1
     elif player.pos.x > WIDTH:
         player.pos.x = 0
-        levelcounter += 1
-        print(levelcounter)
+        if len(m) == 0:
+            levelcounter += 1
     
     for i in range(len(m)):
         if m[i].pos[0] < 0:
@@ -457,16 +447,6 @@ while running:
         canShot = True
         shootClock = 0
 
-    # if SCORE >= 10 and fakeSCORE == 3:
-    #     if allplats[1] == plat2:
-    #         allplats.pop(1)
-    #         plat2.kill()
-    #         plat3 = Platform(560, (HEIGHT / 2) + 180, 200, 35)
-    #         all_sprites.add(plat3)
-    #         all_plats.add(plat3)
-    #         allplats.append(plat3)
-    #         fakeSCORE = fakeSCORE + 2
-    
     if SCORE <= 9:
         mobmove = True
         if fakeSCORE >= 3: 
@@ -491,8 +471,9 @@ while running:
                             m.insert(0, newMob)
                             mobmove = True
 
-    if SCORE <= 30 and SCORE >= 10:
+    if SCORE >= 10 and SCORE <= 30:
         mobmove = True
+        print(fakeSCORE)
         if fakeSCORE >= 5:
             if skip == True:
                 skip = False
@@ -553,6 +534,9 @@ while running:
             player.kill()
             screen.fill(BLACK)
             draw_text("U WIN", 100, WHITE, WIDTH / 2, HEIGHT / 3)
+        
+        if level1 == True:
+            draw_text("Don't pass me or u will be stuck", 22, WHITE, WIDTH * 0.8, HEIGHT / 3)
 
     # buffer - after drawing everything, flip display
     pg.display.flip()
