@@ -21,3 +21,6 @@ fakeSCORE = 0
 skip = True
 mobskip = True
 mobframe = 0
+
+# power-up booleans
+superstar = False
