@@ -97,7 +97,7 @@ class Player(Sprite):
                 allBull.append(bullet)
                 bullet.fly()
             
-            if canShot == True and levelcounter > 0:
+            if canShot == True and len(m) > 0:
                 throwBullet()
                 canShot = False
 
@@ -184,7 +184,7 @@ class Mob(Sprite):
         
         mobhits = pg.sprite.spritecollide(self, player0, False)
         global HEALTH, SCORE, fakeSCORE, superstar
-        if mobhits and superstar == True:
+        if mobhits and superstar == False:
             self.kill()
             m.remove(self)
             if self.move == False:
@@ -306,10 +306,13 @@ class PowerUp(Sprite):
     def __init__(self, color, what):
         Sprite.__init__(self)
         self.color = color
+        self.image = pg.Surface((200, 200))
         self.image.fill(color)
-        self.image = pg.Surface((20, 20))
         self.rect = self.image.get_rect()
         self.what = what
+        self.pos = vec(1000, 500)
+        self.timer = 0
+        self.running = False
 
     def powerup(self):
         global superstar
@@ -317,16 +320,19 @@ class PowerUp(Sprite):
             superstar = True
 
     def update(self):
-        self.acc = vec(0,GRAVITY)
-        self.acc.x += self.vel.x * -0.1
-        self.acc.y += self.vel.y * -0.1
-        self.vel += self.acc
-        self.pos += self.vel + 0.5 * self.acc
+        global superstar
         self.rect.midbottom = self.pos
         hits = pg.sprite.spritecollide(self, player0, False)
         if hits:
-            self.kill()
             self.powerup()
+            self.running = True
+            all_sprites.remove(self)
+
+        if self.running == True:
+            if self.timer >= 60:
+                superstar = False
+                self.kill()
+            self.timer += 1
 
 # init pygame and create a window
 pg.init()
@@ -341,6 +347,7 @@ all_plats = pg.sprite.Group()
 mobs = pg.sprite.Group()
 all_bullets = pg.sprite.Group()
 player0 = pg.sprite.Group()
+powerups = pg.sprite.Group()
 
 allplats = []
 mobshooters = []
@@ -353,14 +360,19 @@ plat = Platform(HEIGHT, WIDTH, 0, 0)
 all_plats.add(plat)
 allplats.append(plat)
 all_sprites.add(plat)
+
+powerup = PowerUp(BLUE, 'noDamage')
+powerups.add(powerup)
+all_sprites.add(powerup)
+
 # plat = Platform(0, HEIGHT - 125, WIDTH, 60)
 
 def firstlevel():
     global plat2
     plat2 = Platform(WIDTH * 0.8, 0, 1, HEIGHT)
-    m1 = Mob(randint(WIDTH/2,WIDTH - 300), randint(330,HEIGHT - 100), 40, 40, (colorbyte(),colorbyte(),colorbyte()), True)
-    m2 = Mob(randint(WIDTH/2,WIDTH - 300), randint(330,HEIGHT - 100), 40, 40, (colorbyte(),colorbyte(),colorbyte()), False)
-    m3 = Mob(randint(WIDTH/2,WIDTH - 300), randint(330,HEIGHT - 100), 40, 40, (colorbyte(),colorbyte(),colorbyte()), True)
+    m1 = Mob(randint(WIDTH/2,WIDTH - 300), randint(330,HEIGHT - 230), 40, 40, (colorbyte(),colorbyte(),colorbyte()), True)
+    m2 = Mob(randint(WIDTH/2,WIDTH - 300), randint(330,HEIGHT - 230), 40, 40, (colorbyte(),colorbyte(),colorbyte()), False)
+    m3 = Mob(randint(WIDTH/2,WIDTH - 300), randint(330,HEIGHT - 230), 40, 40, (colorbyte(),colorbyte(),colorbyte()), True)
     # List of mobs but the form of the names of the mobs can't be changed so it can not be used to identify certain mobs
     m.append(m1)
     m.append(m2)
@@ -418,12 +430,10 @@ while running:
     #         m[i].pos.y =  hits[0].rect.top
     #         m[i].vel.y = 0
 
-    print(m)
-
     if player.pos.y <= 310:
             player.pos.y = 311
-    if player.pos.y >= HEIGHT :
-        player.pos.y = HEIGHT - 10
+    if player.pos.y >= HEIGHT - 210 :
+        player.pos.y = HEIGHT - 220
 
     if level1 == True:
         hits = pg.sprite.spritecollide(plat2, player0, False)
@@ -484,13 +494,13 @@ while running:
                     skip = True
                     for i in range(3):
                         if mobmove == True:
-                            newMob = Mob(randint(WIDTH/2,WIDTH - 300), randint(330, HEIGHT - 100), 40, 40, (colorbyte(),colorbyte(),colorbyte()), True)
+                            newMob = Mob(randint(WIDTH/2,WIDTH - 300), randint(330,HEIGHT - 230), 40, 40, (colorbyte(),colorbyte(),colorbyte()), True)
                             all_sprites.add(newMob)
                             mobs.add(newMob)
                             m.append(newMob)
                             mobmove = False
                         else:
-                            newMob = Mob(randint(WIDTH/2,WIDTH - 300), randint(330, HEIGHT - 100), 40, 40, (colorbyte(),colorbyte(),colorbyte()), False)
+                            newMob = Mob(randint(WIDTH/2,WIDTH - 300), randint(330, HEIGHT - 230), 40, 40, (colorbyte(),colorbyte(),colorbyte()), False)
                             all_sprites.add(newMob)
                             mobs.add(newMob)
                             m.insert(0, newMob)
@@ -539,6 +549,7 @@ while running:
     else:
         # update all sprites
         all_sprites.update()
+        powerups.update()
 
         # draw the background screen
         screen.fill((0,0,0))
@@ -551,7 +562,6 @@ while running:
         all_sprites.draw(screen)
 
         # draw text
-        draw_text("Get to 30 points to win!", 20, BLACK, WIDTH / 2, HEIGHT - 110)
         draw_text("POINTS: " + str(SCORE), 22, WHITE, WIDTH / 2, HEIGHT / 75)
         draw_text("HEALTH: " + str(HEALTH), 22, WHITE, WIDTH - (WIDTH / 3), HEIGHT / 75)
         draw_text("FRAME: " + str(FRAME), 22, WHITE, WIDTH / 3, HEIGHT / 75)
