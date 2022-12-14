@@ -23,4 +23,5 @@ mobskip = True
 mobframe = 0
 
 # power-up booleans
-superstar = False
+superstar = 0
+noHit = False

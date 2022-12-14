@@ -50,6 +50,7 @@ shootermobs = []
 
 starterscreen = pg.image.load(r'c:/github/IntroToProgramming/videoGameFall2022/Game/images/StarterScreen.jpg')
 insideCastle = pg.image.load(r'c:/github/IntroToProgramming/videoGameFall2022/Game/images/InsideCastle.jpg')
+playerSprite = pg.image.load(r'c:/github/IntroToProgramming/videoGameFall2022/Game/images/DK T-posing.png')
 
 # Function that draws text (Don't know to much about it since it was a copy and paste inclass)
 def draw_text(text, size, color, x, y):
@@ -70,16 +71,17 @@ class Player(Sprite):
     def __init__(self):
         Sprite.__init__(self)
         self.image = pg.Surface((50, 50))
-        self.image.fill(BLUE)
+        self.image.fill(BLACK)
         self.rect = self.image.get_rect()
         self.rect.center = (WIDTH/2, HEIGHT/2)
         self.pos = vec(WIDTH/2, HEIGHT/2)
         self.vel = vec(0,0)
         self.acc = vec(0,0)
+        self.timer = 0
 
     # Controls that when a key is pressed it will check to see what key then depending on the key will move in a direction
     def controls(self):
-        global canShot
+        global canShot, noHit, superstar
         keys = pg.key.get_pressed()
         if keys[pg.K_a]:
             self.acc.x = -10
@@ -101,6 +103,11 @@ class Player(Sprite):
                 throwBullet()
                 canShot = False
 
+        if keys[pg.K_e]:
+            if superstar > 0:
+                noHit = True
+                superstar -= 1
+
     # Jump but only when touching a platform
     # def jump(self):
     #     hits = pg.sprite.spritecollide(self, all_plats, False)
@@ -109,6 +116,7 @@ class Player(Sprite):
             
     # Update so whenever a frame is going on this runs and constantly updates the class so things like gravity can exist
     def update(self):
+        global noHit
         self.acc = vec(0,GRAVITY)
         self.controls()
         self.acc.x += self.vel.x * -0.5
@@ -116,6 +124,13 @@ class Player(Sprite):
         self.vel += self.acc
         self.pos += self.vel + 0.5 * self.acc
         self.rect.midbottom = self.pos
+        if noHit == True:
+            self.timer += 1
+            self.image.fill((colorbyte(), colorbyte(), colorbyte()))
+            if self.timer >= 60:
+                noHit = False
+                self.timer = 0 
+                self.image.fill(BLACK)
 
 # platforms class that have xy cords, size, and color
 class Platform(Sprite):
@@ -183,8 +198,8 @@ class Mob(Sprite):
                         self.shot()
         
         mobhits = pg.sprite.spritecollide(self, player0, False)
-        global HEALTH, SCORE, fakeSCORE, superstar
-        if mobhits and superstar == False:
+        global HEALTH, SCORE, fakeSCORE, noHit
+        if mobhits and noHit == False:
             self.kill()
             m.remove(self)
             if self.move == False:
@@ -306,7 +321,7 @@ class PowerUp(Sprite):
     def __init__(self, color, what):
         Sprite.__init__(self)
         self.color = color
-        self.image = pg.Surface((200, 200))
+        self.image = pg.Surface((30, 30))
         self.image.fill(color)
         self.rect = self.image.get_rect()
         self.what = what
@@ -317,7 +332,7 @@ class PowerUp(Sprite):
     def powerup(self):
         global superstar
         if self.what == 'noDamage':
-            superstar = True
+            superstar += 1
 
     def update(self):
         global superstar
@@ -325,14 +340,14 @@ class PowerUp(Sprite):
         hits = pg.sprite.spritecollide(self, player0, False)
         if hits:
             self.powerup()
-            self.running = True
-            all_sprites.remove(self)
+            # self.running = True
+            self.kill()
 
-        if self.running == True:
-            if self.timer >= 60:
-                superstar = False
-                self.kill()
-            self.timer += 1
+        # if self.running == True:
+        #     if self.timer >= 60:
+        #         superstar -= 1
+        #         self.kill()
+        #     self.timer += 1
 
 # init pygame and create a window
 pg.init()
@@ -370,9 +385,9 @@ all_sprites.add(powerup)
 def firstlevel():
     global plat2
     plat2 = Platform(WIDTH * 0.8, 0, 1, HEIGHT)
-    m1 = Mob(randint(WIDTH/2,WIDTH - 300), randint(330,HEIGHT - 230), 40, 40, (colorbyte(),colorbyte(),colorbyte()), True)
-    m2 = Mob(randint(WIDTH/2,WIDTH - 300), randint(330,HEIGHT - 230), 40, 40, (colorbyte(),colorbyte(),colorbyte()), False)
-    m3 = Mob(randint(WIDTH/2,WIDTH - 300), randint(330,HEIGHT - 230), 40, 40, (colorbyte(),colorbyte(),colorbyte()), True)
+    m1 = Mob(WIDTH - 300, HEIGHT/3, 40, 40, GREEN, True)
+    m2 = Mob(randint(WIDTH/2,WIDTH - 300), randint(330,HEIGHT - 230), 40, 40, WHITE, False)
+    m3 = Mob(WIDTH - 300, randint(330,HEIGHT - 230), 40, 40, GREEN, True)
     # List of mobs but the form of the names of the mobs can't be changed so it can not be used to identify certain mobs
     m.append(m1)
     m.append(m2)
@@ -420,7 +435,6 @@ while running:
     
     if SCORE >= 10 and fakeSCORE == 3 and levelcounter == 2 and level2 == False:
         level2 = True
-        level1 = False
         secondlevel()
 
     # For every mob in mob list, check if they collide with a platform and if teleport to the top and set y velocity to 0
@@ -435,7 +449,7 @@ while running:
     if player.pos.y >= HEIGHT - 210 :
         player.pos.y = HEIGHT - 220
 
-    if level1 == True:
+    if level1 == True and levelcounter == 1:
         hits = pg.sprite.spritecollide(plat2, player0, False)
         if hits:
             player.pos.x = hits[0].rect.right
@@ -494,13 +508,13 @@ while running:
                     skip = True
                     for i in range(3):
                         if mobmove == True:
-                            newMob = Mob(randint(WIDTH/2,WIDTH - 300), randint(330,HEIGHT - 230), 40, 40, (colorbyte(),colorbyte(),colorbyte()), True)
+                            newMob = Mob(randint(WIDTH/2,WIDTH - 300), randint(330,HEIGHT - 230), 40, 40, GREEN, True)
                             all_sprites.add(newMob)
                             mobs.add(newMob)
                             m.append(newMob)
                             mobmove = False
                         else:
-                            newMob = Mob(randint(WIDTH/2,WIDTH - 300), randint(330, HEIGHT - 230), 40, 40, (colorbyte(),colorbyte(),colorbyte()), False)
+                            newMob = Mob(randint(WIDTH/2,WIDTH - 300), randint(330, HEIGHT - 230), 40, 40, BLACK, False)
                             all_sprites.add(newMob)
                             mobs.add(newMob)
                             m.insert(0, newMob)
@@ -518,13 +532,13 @@ while running:
                     skip = True
                     for i in range(5):
                         if mobmove == True:
-                            newMob = Mob(randint(0,WIDTH), randint(330, HEIGHT - 100), 40, 40, (colorbyte(),colorbyte(),colorbyte()), True)
+                            newMob = Mob(randint(0,WIDTH), randint(330, HEIGHT - 100), 40, 40, GREEN, True)
                             all_sprites.add(newMob)
                             mobs.add(newMob)
                             m.append(newMob)
                             mobmove = False
                         else:
-                            newMob = Mob(randint(0,WIDTH), randint(330, HEIGHT - 100), 40, 40, (colorbyte(),colorbyte(),colorbyte()), False)
+                            newMob = Mob(randint(0,WIDTH), randint(330, HEIGHT - 100), 40, 40, BLACK, False)
                             all_sprites.add(newMob)
                             mobs.add(newMob)
                             m.insert(0, newMob)
@@ -565,13 +579,14 @@ while running:
         draw_text("POINTS: " + str(SCORE), 22, WHITE, WIDTH / 2, HEIGHT / 75)
         draw_text("HEALTH: " + str(HEALTH), 22, WHITE, WIDTH - (WIDTH / 3), HEIGHT / 75)
         draw_text("FRAME: " + str(FRAME), 22, WHITE, WIDTH / 3, HEIGHT / 75)
+        draw_text("SUPERSTAR: " + str(superstar), 22, WHITE, WIDTH / 6, HEIGHT / 75)
                     # If score equals 30 then end game
         # if SCORE >= 30:
         #     player.kill()
         #     screen.fill(BLACK)
         #     draw_text("U WIN", 100, WHITE, WIDTH / 2, HEIGHT / 3)
         
-        if level1 == True:
+        if level1 == True and levelcounter == 1:
             draw_text("Don't pass me or u will be stuck", 22, WHITE, WIDTH * 0.8, HEIGHT / 3)
 
     # buffer - after drawing everything, flip display
