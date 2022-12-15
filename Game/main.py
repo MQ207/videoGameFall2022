@@ -3,6 +3,7 @@
 # min() https://www.geeksforgeeks.org/python-program-to-find-smallest-number-in-a-list/
 # abs() https://www.toppr.com/guides/python-guide/questions/change-positive-negative-python/
 # Thank you to Tyson for being a stress ball
+# Move according to angle https://stackoverflow.com/questions/46697502/how-to-move-a-sprite-according-to-an-angle-in-pygame/68698440#68698440
 
 '''
 Things to Fix:
@@ -42,12 +43,15 @@ import random
 from random import randint
 from settings import *
 from levels import *
+from math import *
 
+# Random vars and lists for later use. I should rlly organize this
 vec = pg.math.Vector2
 shootClock = 0
 canShot = True
 shootermobs = []
 
+# Background sprites
 starterscreen = pg.image.load(r'c:/github/IntroToProgramming/videoGameFall2022/Game/images/StarterScreen.jpg')
 insideCastle = pg.image.load(r'c:/github/IntroToProgramming/videoGameFall2022/Game/images/InsideCastle.jpg')
 
@@ -65,19 +69,23 @@ def colorbyte():
     return random.randint(0,255)
 
 # Classes
-# Player class with the ability to have size, color, being a rectangle but to the computer, and movement
+# Player class with no parameters because there is only one player unless I wanna do a choose you class thing but thats for later
 class Player(Sprite):
     def __init__(self):
         Sprite.__init__(self)
+        # The player sprite
         self.image = pg.image.load(r'c:/github/IntroToProgramming/videoGameFall2022/Game/images/DK T-posing.png').convert_alpha()
+        self.image = pg.transform.flip(self.image, True, False)
         self.rect = self.image.get_rect()
         self.rect.center = (WIDTH/2, HEIGHT/2)
         self.pos = vec(WIDTH/2, HEIGHT/2)
         self.vel = vec(0,0)
         self.acc = vec(0,0)
+        # Timers for timing things
         self.timer = 0
         self.timer2 = 0
         self.walls = True
+        self.face = "right"
 
     # Controls that when a key is pressed it will check to see what key then depending on the key will move in a direction
     def controls(self):
@@ -92,39 +100,38 @@ class Player(Sprite):
         if keys[pg.K_w]:
             self.acc.y = -10
         if keys[pg.K_c]:
+            # When c is pressed then the plyer will call apon/instantiate a bullet thats a little different from the mob bullets
             def throwBullet():
-                bullet = Bullet(20, 20, RED, "player", self)
+                bullet = Bullet(20, 20, BLUE, "player", self)
                 all_sprites.add(bullet)
                 all_bullets.add(bullet)
                 allBull.append(bullet)
                 bullet.fly()
             
+            # One of the timers in my player class that takes a global var that gets updated inside the game loop to count the frames
             if canShot == True and len(m) > 0:
                 throwBullet()
                 canShot = False
 
         if keys[pg.K_f]:
+            # If F is pressed then spawn a wall but don't spawn a wall if the timer is not over
             if self.walls == True:
-                wall1 = Platform(self.rect.center[0] + 100, self.rect.top, 30, 100, True)
+                wall1 = Platform(self.rect.center[0] + 100, self.rect.top, 50, 100, True)
                 all_plats.add(wall1)
                 allplats.append(wall1)
                 all_sprites.add(wall1)
                 self.walls = False
 
         if keys[pg.K_e]:
-            if superstar > 0:
+            # If you have a super star and you press e then u become invincible
+            if superstar > 0 and noHit == False:
                 noHit = True
                 superstar -= 1
-
-    # Jump but only when touching a platform
-    # def jump(self):
-    #     hits = pg.sprite.spritecollide(self, all_plats, False)
-    #     if hits:
-    #         self.vel.y = -20
             
     # Update so whenever a frame is going on this runs and constantly updates the class so things like gravity can exist
     def update(self):
         global noHit
+        # Gravity that I turned off but am to lazy to delete
         self.acc = vec(0,GRAVITY)
         self.controls()
         self.acc.x += self.vel.x * -0.5
@@ -132,12 +139,21 @@ class Player(Sprite):
         self.vel += self.acc
         self.pos += self.vel + 0.5 * self.acc
         self.rect.midbottom = self.pos
+        if self.vel.x < 0 and self.face == "right":
+            self.image = pg.transform.flip(self.image, True, False)
+            self.face = "left"
+        elif self.vel.x > 0 and self.face == "left":
+            self.image = pg.transform.flip(self.image, True, False)
+            self.face = "right"
+        
+        # The timer for the walls where if the walls have been placed then add 1 to the timer until the timer has counted 200 frames
         if self.walls == False:
             self.timer2 += 1
             if self.timer2 >= 200:
                 self.walls = True
                 self.timer2 = 0
 
+        # Same timer as the walls just this one makes the player rainbow and returns the player to its normal sprite afterwards
         if noHit == True:
             self.timer += 1
             self.image.fill((colorbyte(), colorbyte(), colorbyte()))
@@ -146,7 +162,7 @@ class Player(Sprite):
                 self.timer = 0 
                 self.image = pg.image.load(r'c:/github/IntroToProgramming/videoGameFall2022/Game/images/DK T-posing.png').convert_alpha()
 
-# platforms class that have xy cords, size, and color
+# platforms class that have xy cords, if they are a player wall and size
 class Platform(Sprite):
     def __init__(self, x, y, w, h, player):
         Sprite.__init__(self)
@@ -159,9 +175,9 @@ class Platform(Sprite):
         self.timer = 0
 
     def update(self):
+        # If this wall has been spawned by a player then it will stay up for 2 seconds before disappering
         if self.player == True:
             self.timer += 1
-            print(self.timer)
             if self.timer >= 60:
                 self.kill()
                 all_plats.remove(self)
@@ -169,7 +185,7 @@ class Platform(Sprite):
                 self.timer = 0 
 
 
-# Mob class that have xy cords, size, and color
+# Mob class that have xy cords, size, color, and if is a mover or a shooter
 class Mob(Sprite):
     def __init__(self, x, y, w, h, color, move):
         Sprite.__init__(self)
@@ -178,15 +194,18 @@ class Mob(Sprite):
         self.move = move
         self.image.fill(color)
         self.rect = self.image.get_rect()
-        self.pos = x, y
+        self.pos = (x, y)
         self.vel = vec(0,0)
         self.acc = vec(0,0)
         self.mobframe = 0
         self.mobskip = True
+        self.vec = pg.math.Vector2()
+        # If the move is not a mover then it is put into the shootermob list
         if move == False:
             shootermobs.append(self)
     
     def shot(self):
+        # When a shooter shoots then it will shoot a bullet!!!
         if self.move == False:
             bullet = Bullet(20, 20, RED, "mob", self)
             all_sprites.add(bullet)
@@ -195,8 +214,27 @@ class Mob(Sprite):
             bullet.fly()
 
     def mover(self):
-            self.vel.x = (player.rect.center[0] - (self.rect.center[0]))/20
-            self.vel.y = (player.rect.center[1] - (self.rect.center[1]))/20
+        # Movers always move towards the player
+        rise = (player.rect.center[1] - self.rect.center[1])/20
+        run = (player.rect.center[0] - self.rect.center[0])/20
+        self.vel.x = run
+        self.vel.y = rise
+
+
+        degree = floor(degrees(atan(rise/run)))
+        return degree
+        # if ((player.rect.center[0] - (self.rect.center[0]))/20) > 20:
+        #     self.vel.x = (player.rect.center[0] - (self.rect.center[0]))/20
+        # else:
+        #     self.vel.x = (player.rect.center[0] - (self.rect.center[0]))/20
+
+        # if ((player.rect.center[1] - (self.rect.center[1]))/20) > 20:
+        #     self.vel.y = ((player.rect.center[1] - (self.rect.center[1]))/20)
+        # else:
+        #     self.vel.y = (player.rect.center[1] - (self.rect.center[1]))/20
+        # print(self.vel.x)
+
+            
 
 # Like the player, mob also has a update method so the gravity can be a thing
     def update(self):
@@ -212,7 +250,7 @@ class Mob(Sprite):
                     self.mobskip = False
                     self.mobframe = FRAME
                 if self.mobskip == False:
-                    if FRAME - self.mobframe >= 5:
+                    if FRAME - self.mobframe >= 1:
                         self.mobskip = True
                         self.mover()
             if self.move == False:
@@ -242,7 +280,7 @@ class Mob(Sprite):
 class Bullet(Sprite):
     def __init__(self, w, h, color, who, whatmob):
         Sprite.__init__(self)
-        self.image = pg.Surface((w, h))
+        self.image = pg.Surface((w, h),  pg.SRCALPHA)
         self.color = color
         self.whatmob = whatmob
         self.image.fill(color)
@@ -323,8 +361,11 @@ class Bullet(Sprite):
 
         if self.who == "mob":
             # for i in range(len(shootermobs)):
-            self.vel.x = (playerX - (self.whatmob.rect.center[0]))/10
-            self.vel.y = (playerY - (self.whatmob.rect.center[1]))/10
+            self.vel.x = (playerX - (self.whatmob.rect.center[0]))/20
+            self.vel.y = (playerY - (self.whatmob.rect.center[1]))/20
+            rise = self.vel.y
+            run = self.vel.x
+            # self.image = pg.transform.rotate(self.image, floor(degrees(atan(rise/run))))
 
     
             # If the bullet came from a player
@@ -368,14 +409,24 @@ class PowerUp(Sprite):
         hits = pg.sprite.spritecollide(self, player0, False)
         if hits:
             self.powerup()
-            # self.running = True
             self.kill()
 
-        # if self.running == True:
-        #     if self.timer >= 60:
-        #         superstar -= 1
-        #         self.kill()
-        #     self.timer += 1
+class HealthBar(Sprite):
+    def __init__(self, W, H, x, y):
+        Sprite.__init__(self)
+        self.image = pg.Surface((W, H))
+        self.image.fill(RED)
+        self.rect = self.image.get_rect()
+        self.W = W
+        self.H = H
+        self.pos = x, y
+    
+    def update(self):
+        self.rect.midbottom = self.pos
+        player_health = (HEALTH/100)* self.W
+        self.image = pg.Surface((player_health, self.H))
+        self.image.fill(RED)
+
 
 # init pygame and create a window
 pg.init()
@@ -403,8 +454,8 @@ player = Player()
 powerup = PowerUp('noDamage', 2*(WIDTH/3), HEIGHT/2)
 powerups.add(powerup)
 all_sprites.add(powerup)
-
-# plat = Platform(0, HEIGHT - 125, WIDTH, 60)
+player_healthbar = HealthBar(600, 30, WIDTH/2, (HEIGHT/50) * 49)
+all_sprites.add(player_healthbar)
 
 def firstlevel():
     m1 = Mob(WIDTH - 300, HEIGHT/3, 40, 40, GREEN, True)
@@ -458,6 +509,10 @@ while running:
     if SCORE >= 10 and fakeSCORE == 3 and levelcounter == 2 and level2 == False:
         level2 = True
         secondlevel()
+
+    if SCORE >= 20 and fakeSCORE == 5 and levelcounter == 3 and level3 == False:
+        level3 = True
+        thirdlevel()
 
     # For every mob in mob list, check if they collide with a platform and if teleport to the top and set y velocity to 0
     # for i in range(len(m)):
@@ -565,13 +620,6 @@ while running:
     for event in pg.event.get():
         if event.type == pg.QUIT:
             running = False
-        
-        # Checks if something is pressed and what it is
-        if event.type == pg.KEYDOWN:
-
-            # When space is pressed then jump()
-            if event.key == pg.K_SPACE:
-                player.jump()
 
     if HEALTH <= 0:
         player.kill()
@@ -584,9 +632,9 @@ while running:
 
         # draw the background screen
         screen.fill((0,0,0))
-        if levelcounter <= 2:
+        if levelcounter <= 2 and level1 == True or level2 == True:
             screen.blit(starterscreen, (0, 0))
-        if levelcounter >= 3:
+        if levelcounter >= 3 and level3 == True:
             screen.blit(insideCastle, (0, 0))
 
         # draw all sprites
