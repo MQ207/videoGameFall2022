@@ -50,7 +50,6 @@ shootermobs = []
 
 starterscreen = pg.image.load(r'c:/github/IntroToProgramming/videoGameFall2022/Game/images/StarterScreen.jpg')
 insideCastle = pg.image.load(r'c:/github/IntroToProgramming/videoGameFall2022/Game/images/InsideCastle.jpg')
-playerSprite = pg.image.load(r'c:/github/IntroToProgramming/videoGameFall2022/Game/images/DK T-posing.png')
 
 # Function that draws text (Don't know to much about it since it was a copy and paste inclass)
 def draw_text(text, size, color, x, y):
@@ -70,14 +69,15 @@ def colorbyte():
 class Player(Sprite):
     def __init__(self):
         Sprite.__init__(self)
-        self.image = pg.Surface((50, 50))
-        self.image.fill(BLACK)
+        self.image = pg.image.load(r'c:/github/IntroToProgramming/videoGameFall2022/Game/images/DK T-posing.png').convert_alpha()
         self.rect = self.image.get_rect()
         self.rect.center = (WIDTH/2, HEIGHT/2)
         self.pos = vec(WIDTH/2, HEIGHT/2)
         self.vel = vec(0,0)
         self.acc = vec(0,0)
         self.timer = 0
+        self.timer2 = 0
+        self.walls = True
 
     # Controls that when a key is pressed it will check to see what key then depending on the key will move in a direction
     def controls(self):
@@ -103,6 +103,14 @@ class Player(Sprite):
                 throwBullet()
                 canShot = False
 
+        if keys[pg.K_f]:
+            if self.walls == True:
+                wall1 = Platform(self.rect.center[0] + 100, self.rect.top, 30, 100, True)
+                all_plats.add(wall1)
+                allplats.append(wall1)
+                all_sprites.add(wall1)
+                self.walls = False
+
         if keys[pg.K_e]:
             if superstar > 0:
                 noHit = True
@@ -124,23 +132,42 @@ class Player(Sprite):
         self.vel += self.acc
         self.pos += self.vel + 0.5 * self.acc
         self.rect.midbottom = self.pos
+        if self.walls == False:
+            self.timer2 += 1
+            if self.timer2 >= 200:
+                self.walls = True
+                self.timer2 = 0
+
         if noHit == True:
             self.timer += 1
             self.image.fill((colorbyte(), colorbyte(), colorbyte()))
             if self.timer >= 60:
                 noHit = False
                 self.timer = 0 
-                self.image.fill(BLACK)
+                self.image = pg.image.load(r'c:/github/IntroToProgramming/videoGameFall2022/Game/images/DK T-posing.png').convert_alpha()
 
 # platforms class that have xy cords, size, and color
 class Platform(Sprite):
-    def __init__(self, x, y, w, h):
+    def __init__(self, x, y, w, h, player):
         Sprite.__init__(self)
         self.image = pg.Surface((w, h))
         self.image.fill(GREEN)
         self.rect = self.image.get_rect()
         self.rect.x = x
         self.rect.y = y
+        self.player = player
+        self.timer = 0
+
+    def update(self):
+        if self.player == True:
+            self.timer += 1
+            print(self.timer)
+            if self.timer >= 60:
+                self.kill()
+                all_plats.remove(self)
+                allplats.remove(self)
+                self.timer = 0 
+
 
 # Mob class that have xy cords, size, and color
 class Mob(Sprite):
@@ -269,7 +296,8 @@ class Bullet(Sprite):
         if self.who == "mob":
             # for o in range(len(allBull)):
             bullethitsplayer = pg.sprite.spritecollide(self, player0, False)
-            if bullethitsplayer:
+            global noHit
+            if bullethitsplayer and noHit == False:
                 HEALTH -= 5
                 if SCORE != 0:
                     SCORE -= 1
@@ -318,14 +346,14 @@ class Bullet(Sprite):
                     self.vel.y = (bulletXY[((2 * i) + 1)]) * -.1
                 
 class PowerUp(Sprite):
-    def __init__(self, color, what):
+    def __init__(self, what, x, y):
         Sprite.__init__(self)
-        self.color = color
         self.image = pg.Surface((30, 30))
-        self.image.fill(color)
+        if what == 'noDamage':
+            self.image.fill(BLUE)
         self.rect = self.image.get_rect()
         self.what = what
-        self.pos = vec(1000, 500)
+        self.pos = x, y
         self.timer = 0
         self.running = False
 
@@ -371,20 +399,14 @@ m = []
 
 # instantiate classes
 player = Player()
-plat = Platform(HEIGHT, WIDTH, 0, 0)
-all_plats.add(plat)
-allplats.append(plat)
-all_sprites.add(plat)
 
-powerup = PowerUp(BLUE, 'noDamage')
+powerup = PowerUp('noDamage', 2*(WIDTH/3), HEIGHT/2)
 powerups.add(powerup)
 all_sprites.add(powerup)
 
 # plat = Platform(0, HEIGHT - 125, WIDTH, 60)
 
 def firstlevel():
-    global plat2
-    plat2 = Platform(WIDTH * 0.8, 0, 1, HEIGHT)
     m1 = Mob(WIDTH - 300, HEIGHT/3, 40, 40, GREEN, True)
     m2 = Mob(randint(WIDTH/2,WIDTH - 300), randint(330,HEIGHT - 230), 40, 40, WHITE, False)
     m3 = Mob(WIDTH - 300, randint(330,HEIGHT - 230), 40, 40, GREEN, True)
@@ -395,14 +417,14 @@ def firstlevel():
     all_sprites.add(m)
     mobs.add(m)
 
-    all_plats.add(plat2)
-    allplats.append(plat2)
-
 def secondlevel():
     global fakeSCORE
-    allplats.pop(1)
-    plat2.kill()
     fakeSCORE = fakeSCORE + 2
+
+def thirdlevel():
+    superstar1 = PowerUp('noDamage',  2*(WIDTH/3), HEIGHT/2)
+    powerups.add(superstar1)
+    all_sprites.add(superstar1)
 
 
 # Adds all bullets put in the allBulls list into sprite groups
@@ -448,11 +470,6 @@ while running:
             player.pos.y = 311
     if player.pos.y >= HEIGHT - 210 :
         player.pos.y = HEIGHT - 220
-
-    if level1 == True and levelcounter == 1:
-        hits = pg.sprite.spritecollide(plat2, player0, False)
-        if hits:
-            player.pos.x = hits[0].rect.right
     
     if len(mobs) != len(m):
         fakeSCORE += 1
@@ -585,9 +602,6 @@ while running:
         #     player.kill()
         #     screen.fill(BLACK)
         #     draw_text("U WIN", 100, WHITE, WIDTH / 2, HEIGHT / 3)
-        
-        if level1 == True and levelcounter == 1:
-            draw_text("Don't pass me or u will be stuck", 22, WHITE, WIDTH * 0.8, HEIGHT / 3)
 
     # buffer - after drawing everything, flip display
     pg.display.flip()
