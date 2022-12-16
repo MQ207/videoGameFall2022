@@ -392,6 +392,8 @@ class PowerUp(Sprite):
         self.image = pg.Surface((30, 30))
         if what == 'noDamage':
             self.image.fill(BLUE)
+        if what == 'health':
+            self.image.fill(RED)
         self.rect = self.image.get_rect()
         self.what = what
         self.pos = x, y
@@ -399,9 +401,11 @@ class PowerUp(Sprite):
         self.running = False
 
     def powerup(self):
-        global superstar
+        global superstar, HEALTH
         if self.what == 'noDamage':
             superstar += 1
+        if self.what == 'health':
+            HEALTH = HEALTH + 10
 
     def update(self):
         global superstar
@@ -455,6 +459,8 @@ powerup = PowerUp('noDamage', 2*(WIDTH/3), HEIGHT/2)
 powerups.add(powerup)
 all_sprites.add(powerup)
 player_healthbar = HealthBar(600, 30, WIDTH/2, (HEIGHT/50) * 49)
+platform = Platform(WIDTH/3.425, (HEIGHT/18) * 17, 600, 38, False)
+all_sprites.add(platform)
 all_sprites.add(player_healthbar)
 
 def firstlevel():
@@ -471,6 +477,9 @@ def firstlevel():
 def secondlevel():
     global fakeSCORE
     fakeSCORE = fakeSCORE + 2
+    healthpack1 = PowerUp('health',  2*(WIDTH/3), HEIGHT/2)
+    powerups.add(healthpack1)
+    all_sprites.add(healthpack1)
 
 def thirdlevel():
     superstar1 = PowerUp('noDamage',  2*(WIDTH/3), HEIGHT/2)
@@ -645,6 +654,8 @@ while running:
         draw_text("HEALTH: " + str(HEALTH), 22, WHITE, WIDTH - (WIDTH / 3), HEIGHT / 75)
         draw_text("FRAME: " + str(FRAME), 22, WHITE, WIDTH / 3, HEIGHT / 75)
         draw_text("SUPERSTAR: " + str(superstar), 22, WHITE, WIDTH / 6, HEIGHT / 75)
+        if levelcounter <= 0:
+            draw_text("How to play! WASD to move, C to shoot, F for walls, E to use your superstar. Don't die and keep progressing into the castle! (There is only 2 real levels if u can call them levels...)", 22, WHITE, WIDTH / 2, HEIGHT / 5)
                     # If score equals 30 then end game
         # if SCORE >= 30:
         #     player.kill()
