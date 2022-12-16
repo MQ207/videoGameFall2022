@@ -221,8 +221,8 @@ class Mob(Sprite):
         self.vel.y = rise
 
 
-        degree = floor(degrees(atan(rise/run)))
-        return degree
+        # degree = floor(degrees(atan(rise/run)))
+        # return degree
         # if ((player.rect.center[0] - (self.rect.center[0]))/20) > 20:
         #     self.vel.x = (player.rect.center[0] - (self.rect.center[0]))/20
         # else:
@@ -655,7 +655,7 @@ while running:
         draw_text("FRAME: " + str(FRAME), 22, WHITE, WIDTH / 3, HEIGHT / 75)
         draw_text("SUPERSTAR: " + str(superstar), 22, WHITE, WIDTH / 6, HEIGHT / 75)
         if levelcounter <= 0:
-            draw_text("How to play! WASD to move, C to shoot, F for walls, E to use your superstar. Don't die and keep progressing into the castle! (There is only 2 real levels if u can call them levels...)", 22, WHITE, WIDTH / 2, HEIGHT / 5)
+            draw_text("How to play! WASD to move, C to shoot, F for walls, E to use your superstar. Don't die and keep progressing into the castle! (There is only 2 real levels if u can call them levels...s)", 22, WHITE, WIDTH / 2, HEIGHT / 5)
                     # If score equals 30 then end game
         # if SCORE >= 30:
         #     player.kill()
