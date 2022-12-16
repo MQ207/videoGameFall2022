@@ -368,7 +368,7 @@ class Bullet(Sprite):
             # self.image = pg.transform.rotate(self.image, floor(degrees(atan(rise/run))))
 
     
-            # If the bullet came from a player
+        # If the bullet came from a player
         if self.who == "player":  
             for mob in m: 
             # Grabs the xy distance from the player to the mob then adds them so see what mob is closest
@@ -380,7 +380,8 @@ class Bullet(Sprite):
                 mob = mobY + mobX
                 mobDistance.append(mob)
                 mobClosest = min(mobDistance)
-            
+
+            # Goes through each mob to see which on is the closes
             for i in range(len(m)):
                 if mobClosest == mobDistance[i]:
                     self.vel.x = (bulletXY[(2 * i)]) * -.1
