@@ -6,7 +6,7 @@ Play a simple game but with aimbot
 
 ## Description
 
-My game was made during my Bellarmine programming class with the help of Mr. Cozort and my fellow classmates. This game is just a normally platformer with no sprites  (Yet) and no sound (also coming). I hope this game satifies your desire to hit ever shot without having to aim like playing Moira in Overwatch.
+My game was made during my Bellarmine programming class with the help of Mr. Cozort and my fellow classmates. This game is just a normal platformer with no sprites  (Yet) and no sound (also coming). I hope this game satifies your desire to hit ever shot without having to aim l.
 
 ## Getting Started
 
