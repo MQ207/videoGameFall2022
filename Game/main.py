@@ -8,9 +8,10 @@
 '''
 Things to Fix:
 - Boundries
+- bullet speed inconsistency ✅
 
 future plans:
-Health Bar
+Health Bar ✅
 Ammo
 Melee
 Power-up class
@@ -52,8 +53,8 @@ canShot = True
 shootermobs = []
 
 # Background sprites
-starterscreen = pg.image.load(r'c:/github/IntroToProgramming/videoGameFall2022/Game/images/StarterScreen.jpg')
-insideCastle = pg.image.load(r'c:/github/IntroToProgramming/videoGameFall2022/Game/images/InsideCastle.jpg')
+starterscreen = pg.image.load(r'C:\Users\minhi\OneDrive\Documents\GitHub\videoGameFall2022\Game\images\StarterScreen.jpg')
+insideCastle = pg.image.load(r'C:\Users\minhi\OneDrive\Documents\GitHub\videoGameFall2022\Game\images\InsideCastle.jpg')
 
 # Function that draws text (Don't know to much about it since it was a copy and paste inclass)
 def draw_text(text, size, color, x, y):
@@ -74,7 +75,7 @@ class Player(Sprite):
     def __init__(self):
         Sprite.__init__(self)
         # The player sprite
-        self.image = pg.image.load(r'c:/github/IntroToProgramming/videoGameFall2022/Game/images/DK T-posing.png').convert_alpha()
+        self.image = pg.image.load(r'C:\Users\minhi\OneDrive\Documents\GitHub\videoGameFall2022\Game\images\DK T-posing.png').convert_alpha()
         self.image = pg.transform.flip(self.image, True, False)
         self.rect = self.image.get_rect()
         self.rect.center = (WIDTH/2, HEIGHT/2)
@@ -149,7 +150,7 @@ class Player(Sprite):
         # The timer for the walls where if the walls have been placed then add 1 to the timer until the timer has counted 200 frames
         if self.walls == False:
             self.timer2 += 1
-            if self.timer2 >= 200:
+            if self.timer2 >= 100:
                 self.walls = True
                 self.timer2 = 0
 
@@ -160,7 +161,7 @@ class Player(Sprite):
             if self.timer >= 60:
                 noHit = False
                 self.timer = 0 
-                self.image = pg.image.load(r'c:/github/IntroToProgramming/videoGameFall2022/Game/images/DK T-posing.png').convert_alpha()
+                self.image = pg.image.load(r'C:\Users\minhi\OneDrive\Documents\GitHub\videoGameFall2022\Game\images\DK T-posing.png').convert_alpha()
 
 # platforms class that have xy cords, if they are a player wall and size
 class Platform(Sprite):
@@ -194,12 +195,13 @@ class Mob(Sprite):
         self.move = move
         self.image.fill(color)
         self.rect = self.image.get_rect()
-        self.pos = (x, y)
+        self.pos = vec(x, y)
         self.vel = vec(0,0)
         self.acc = vec(0,0)
         self.mobframe = 0
         self.mobskip = True
         self.vec = pg.math.Vector2()
+        mobs.add(self)
         # If the move is not a mover then it is put into the shootermob list
         if move == False:
             shootermobs.append(self)
@@ -214,66 +216,93 @@ class Mob(Sprite):
             bullet.fly()
 
     def mover(self):
-        # Movers always move towards the player
-        rise = (player.rect.center[1] - self.rect.center[1])/20
-        run = (player.rect.center[0] - self.rect.center[0])/20
-        self.vel.x = run
-        self.vel.y = rise
+        # Gets the players cords then compares it to the mobs cords to get straight part of triangle
+        # Then uses pythagorean theorem to get the hypothenuse which allows for constant scaling using unit vectors
+        dx = player.rect.centerx - self.rect.centerx
+        dy = player.rect.centery - self.rect.centery
 
+        distance = (dx**2 + dy**2) ** 0.5
 
-        # degree = floor(degrees(atan(rise/run)))
-        # return degree
-        # if ((player.rect.center[0] - (self.rect.center[0]))/20) > 20:
-        #     self.vel.x = (player.rect.center[0] - (self.rect.center[0]))/20
-        # else:
-        #     self.vel.x = (player.rect.center[0] - (self.rect.center[0]))/20
+        if distance != 0:
+            dx /= distance
+            dy /= distance
 
-        # if ((player.rect.center[1] - (self.rect.center[1]))/20) > 20:
-        #     self.vel.y = ((player.rect.center[1] - (self.rect.center[1]))/20)
-        # else:
-        #     self.vel.y = (player.rect.center[1] - (self.rect.center[1]))/20
-        # print(self.vel.x)
+        speed = 5
 
-            
+        self.vel.x = dx * speed
+        self.vel.y = dy * speed      
 
 # Like the player, mob also has a update method so the gravity can be a thing
     def update(self):
-        self.acc = vec(0,GRAVITY)
-        self.acc.x += self.vel.x * -0.1
-        self.acc.y += self.vel.y * -0.1
-        self.vel += self.acc
-        self.pos += self.vel + 0.5 * self.acc
-        self.rect.midbottom = self.pos
-        if len(m) > 0:
-            if self.move == True:
-                if self.mobskip == True:
-                    self.mobskip = False
-                    self.mobframe = FRAME
-                if self.mobskip == False:
-                    if FRAME - self.mobframe >= 1:
-                        self.mobskip = True
-                        self.mover()
-            if self.move == False:
-                if self.mobskip == True:
-                    self.mobskip = False
-                    self.mobframe = FRAME
-                if self.mobskip == False:
-                    if FRAME - self.mobframe >= 20:
-                        self.mobskip = True
-                        self.shot()
-        
-        mobhits = pg.sprite.spritecollide(self, player0, False)
         global HEALTH, SCORE, fakeSCORE, noHit
-        if mobhits and noHit == False:
+
+        # -------------------------
+        # 1. AI behavior (movement / shooting)
+        # -------------------------
+        if len(m) > 0:
+            if self.move:  # mover mob
+                if self.mobskip:
+                    self.mobskip = False
+                    self.mobframe = FRAME
+                elif FRAME - self.mobframe >= 1:
+                    self.mobskip = True
+                    self.mover()
+
+            else:  # shooter mob
+                if self.mobskip:
+                    self.mobskip = False
+                    self.mobframe = FRAME
+                elif FRAME - self.mobframe >= 20:
+                    self.mobskip = True
+                    self.shot()
+
+        # -------------------------
+        # 2. Apply velocity to position (X axis)
+        # -------------------------
+        self.pos.x += self.vel.x
+        self.rect.x = self.pos.x
+
+        hits = pg.sprite.spritecollide(self, all_plats, False)
+        for hit in hits:
+            if self.vel.x > 0:  # moving right
+                self.rect.right = hit.rect.left
+            elif self.vel.x < 0:  # moving left
+                self.rect.left = hit.rect.right
+            self.vel.x = 0
+            self.pos.x = self.rect.x  # sync pos with rect
+
+        # -------------------------
+        # 3. Apply velocity to position (Y axis)
+        # -------------------------
+        self.pos.y += self.vel.y
+        self.rect.y = self.pos.y
+
+        hits = pg.sprite.spritecollide(self, all_plats, False)
+        for hit in hits:
+            if self.vel.y > 0:  # falling
+                self.rect.bottom = hit.rect.top
+            elif self.vel.y < 0:  # rising
+                self.rect.top = hit.rect.bottom
+            self.vel.y = 0
+            self.pos.y = self.rect.y  # sync pos with rect
+
+        # -------------------------
+        # 4. Check collision with player
+        # -------------------------
+        mobhits = pg.sprite.spritecollide(self, player0, False)
+        if mobhits and not noHit:
             self.kill()
-            m.remove(self)
-            if self.move == False:
+            if self in m:
+                m.remove(self)
+            if not self.move and self in shootermobs:
                 shootermobs.remove(self)
+
             HEALTH -= 1
             fakeSCORE += 1
+
             if SCORE >= 5:
                 SCORE -= 5
-            if SCORE < 5:
+            else:
                 SCORE = 0
 
 # Bullet calls that has the same property as everything else
@@ -291,10 +320,6 @@ class Bullet(Sprite):
             self.rect.x = player.rect.center[0] - 10
             self.rect.y = player.rect.center[1] - 10
         if who == "mob":
-            # for i in range(len(shootermobs)):
-            #     self.pos = (shootermobs[i].rect.center[0], shootermobs[i].rect.center[1])
-            #     self.rect.x = shootermobs[i].rect.center[0] - 10
-            #     self.rect.y = shootermobs[i].rect.center[1] - 10
             self.pos = (whatmob.rect.center[0], whatmob.rect.center[1])
             self.rect.x = whatmob.rect.center[0] - 10
             self.rect.y = whatmob.rect.center[1] - 10
@@ -351,41 +376,52 @@ class Bullet(Sprite):
 
     # Fly really just gets the cords of all mobs on screen then compares to know which to shoot at
     def fly(self):
+        speed = 20
+
         # Gets the players cords
         playerX = player.rect.center[0]
         playerY = player.rect.center[1]
 
-        # Empty list for later use
-        mobDistance = []
-        bulletXY = []
-
         if self.who == "mob":
             # for i in range(len(shootermobs)):
-            self.vel.x = (playerX - (self.whatmob.rect.center[0]))/20
-            self.vel.y = (playerY - (self.whatmob.rect.center[1]))/20
-            rise = self.vel.y
-            run = self.vel.x
+            dx = playerX - self.rect.centerx
+            dy = playerY - self.rect.centery
+
+            distance = (dx**2 + dy**2) ** 0.5
+
+            if distance != 0:
+                dx /= distance
+                dy /= distance
+
+            self.vel.x = dx * speed
+            self.vel.y = dy * speed   
             # self.image = pg.transform.rotate(self.image, floor(degrees(atan(rise/run))))
 
     
         # If the bullet came from a player
         if self.who == "player":  
+            mobClosest = None
+            mobClosestD = 0
             for mob in m: 
             # Grabs the xy distance from the player to the mob then adds them so see what mob is closest
-                global mobClosest
                 mobX = abs(playerX - (mob.rect.center[0]))
                 mobY = abs(playerY - (mob.rect.center[1]))
-                bulletXY.append(playerX - (mob.rect.center[0]))
-                bulletXY.append(playerY - (mob.rect.center[1]) - 10)
-                mob = mobY + mobX
-                mobDistance.append(mob)
-                mobClosest = min(mobDistance)
+                mobD = mobY + mobX
+                if mobClosest == None or mobD < mobClosestD:
+                    mobClosest = mob
+                    mobClosestD = mobD
 
-            # Goes through each mob to see which on is the closes
-            for i in range(len(m)):
-                if mobClosest == mobDistance[i]:
-                    self.vel.x = (bulletXY[(2 * i)]) * -.1
-                    self.vel.y = (bulletXY[((2 * i) + 1)]) * -.1
+            dx = mobClosest.rect.centerx - self.rect.centerx
+            dy = mobClosest.rect.centery - self.rect.centery
+
+            distance = (dx**2 + dy**2) ** 0.5
+
+            if distance != 0:
+                dx /= distance
+                dy /= distance
+                
+            self.vel.x = dx * speed
+            self.vel.y = dy * speed         
                 
 class PowerUp(Sprite):
     def __init__(self, what, x, y):
@@ -466,7 +502,7 @@ all_sprites.add(player_healthbar)
 
 def firstlevel():
     m1 = Mob(WIDTH - 300, HEIGHT/3, 40, 40, GREEN, True)
-    m2 = Mob(randint(WIDTH/2,WIDTH - 300), randint(330,HEIGHT - 230), 40, 40, WHITE, False)
+    m2 = Mob(randint(WIDTH//2,WIDTH - 300), randint(330,HEIGHT - 230), 40, 40, WHITE, False)
     m3 = Mob(WIDTH - 300, randint(330,HEIGHT - 230), 40, 40, GREEN, True)
     # List of mobs but the form of the names of the mobs can't be changed so it can not be used to identify certain mobs
     m.append(m1)
@@ -590,13 +626,13 @@ while running:
                     skip = True
                     for i in range(3):
                         if mobmove == True:
-                            newMob = Mob(randint(WIDTH/2,WIDTH - 300), randint(330,HEIGHT - 230), 40, 40, GREEN, True)
+                            newMob = Mob(randint(WIDTH//2,WIDTH - 300), randint(330,HEIGHT - 230), 40, 40, GREEN, True)
                             all_sprites.add(newMob)
                             mobs.add(newMob)
                             m.append(newMob)
                             mobmove = False
                         else:
-                            newMob = Mob(randint(WIDTH/2,WIDTH - 300), randint(330, HEIGHT - 230), 40, 40, BLACK, False)
+                            newMob = Mob(randint(WIDTH//2,WIDTH - 300), randint(330, HEIGHT - 230), 40, 40, BLACK, False)
                             all_sprites.add(newMob)
                             mobs.add(newMob)
                             m.insert(0, newMob)
