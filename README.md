@@ -49,6 +49,8 @@ MQHP000@gmail.com
     * Player sprite
 * 1.0
     * Player health bar, flipping player sprite, and health pack
+* 1.1
+    * Fixed inconsistent bullet speed and added wall collisions to mobs
 
 ## License
 
